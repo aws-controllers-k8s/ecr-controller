@@ -16,9 +16,10 @@ package repository
 import (
 	"context"
 
-	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
 	"github.com/aws/aws-sdk-go/aws"
 	svcsdk "github.com/aws/aws-sdk-go/service/ecr"
+
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 )
 
 var (
@@ -43,44 +44,24 @@ func (rm *resourceManager) customUpdateRepository(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
-	diffReporter *ackcompare.Reporter,
+	delta *ackcompare.Delta,
 ) (*resource, error) {
 	var err error
 	var updated *resource
 	updated = desired
-	if imageScanningConfigurationChanged(desired, latest) {
+	if delta.DifferentAt("ImageScanningConfiguration") {
 		updated, err = rm.updateImageScanningConfiguration(ctx, updated)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if imageTagMutabilityChanged(desired, latest) {
+	if delta.DifferentAt("ImageTagMutability") {
 		updated, err = rm.updateImageTagMutability(ctx, updated)
 		if err != nil {
 			return nil, err
 		}
 	}
 	return updated, nil
-}
-
-// imageScanningConfigurationChanged returns true if the image scanning
-// configuration of the supplied desired and latest Repository resources is
-// different
-func imageScanningConfigurationChanged(
-	desired *resource,
-	latest *resource,
-) bool {
-	dspec := desired.ko.Spec
-	lspec := latest.ko.Spec
-	if dspec.ImageScanningConfiguration == nil {
-		return lspec.ImageScanningConfiguration != nil
-	}
-	if lspec.ImageScanningConfiguration == nil {
-		return true
-	}
-	dval := *dspec.ImageScanningConfiguration.ScanOnPush
-	lval := *lspec.ImageScanningConfiguration.ScanOnPush
-	return dval != lval
 }
 
 // updateImageScanningConfiguration calls the PutImageScanningConfiguration ECR
@@ -108,25 +89,6 @@ func (rm *resourceManager) updateImageScanningConfiguration(
 		return nil, err
 	}
 	return desired, nil
-}
-
-// imageTagMutabilityChanged returns true if the image tag mutability of the
-// supplied desired and latest Repository resources is different
-func imageTagMutabilityChanged(
-	desired *resource,
-	latest *resource,
-) bool {
-	dspec := desired.ko.Spec
-	lspec := latest.ko.Spec
-	if dspec.ImageTagMutability == nil {
-		return lspec.ImageTagMutability != nil
-	}
-	if lspec.ImageTagMutability == nil {
-		return true
-	}
-	dval := *dspec.ImageTagMutability
-	lval := *lspec.ImageTagMutability
-	return dval != lval
 }
 
 // updateImageTagMutability calls the PutImageTagMutability ECR API call for a
