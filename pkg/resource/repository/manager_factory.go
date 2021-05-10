@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"sync"
 
-	ackv1alpha1 "github.com/aws/aws-controllers-k8s/apis/core/v1alpha1"
-	ackcfg "github.com/aws/aws-controllers-k8s/pkg/config"
-	ackmetrics "github.com/aws/aws-controllers-k8s/pkg/metrics"
-	acktypes "github.com/aws/aws-controllers-k8s/pkg/types"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 
@@ -49,7 +49,7 @@ func (f *resourceManagerFactory) ManagerFor(
 	cfg ackcfg.Config,
 	log logr.Logger,
 	metrics *ackmetrics.Metrics,
-	rr acktypes.AWSResourceReconciler,
+	rr acktypes.Reconciler,
 	sess *session.Session,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
@@ -72,6 +72,11 @@ func (f *resourceManagerFactory) ManagerFor(
 	}
 	f.rmCache[rmId] = rm
 	return rm, nil
+}
+
+// IsAdoptable returns true if the resource is able to be adopted
+func (f *resourceManagerFactory) IsAdoptable() bool {
+	return true
 }
 
 func newResourceManagerFactory() *resourceManagerFactory {

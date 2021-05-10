@@ -18,14 +18,14 @@ package repository
 import (
 	"context"
 	"fmt"
-	ackerr "github.com/aws/aws-controllers-k8s/pkg/errors"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
-	ackv1alpha1 "github.com/aws/aws-controllers-k8s/apis/core/v1alpha1"
-	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
-	ackcfg "github.com/aws/aws-controllers-k8s/pkg/config"
-	ackmetrics "github.com/aws/aws-controllers-k8s/pkg/metrics"
-	acktypes "github.com/aws/aws-controllers-k8s/pkg/types"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 
@@ -35,8 +35,6 @@ import (
 
 // +kubebuilder:rbac:groups=ecr.services.k8s.aws,resources=repositories,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ecr.services.k8s.aws,resources=repositories/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -50,9 +48,9 @@ type resourceManager struct {
 	// metrics contains a collection of Prometheus metric objects that the
 	// service controller and its reconcilers track
 	metrics *ackmetrics.Metrics
-	// rr is the AWSResourceReconciler which can be used for various utility
+	// rr is the Reconciler which can be used for various utility
 	// functions such as querying for Secret values given a SecretReference
-	rr acktypes.AWSResourceReconciler
+	rr acktypes.Reconciler
 	// awsAccountID is the AWS account identifier that contains the resources
 	// managed by this resource manager
 	awsAccountID ackv1alpha1.AWSAccountID
@@ -125,7 +123,7 @@ func (rm *resourceManager) Update(
 	ctx context.Context,
 	resDesired acktypes.AWSResource,
 	resLatest acktypes.AWSResource,
-	diffReporter *ackcompare.Reporter,
+	delta *ackcompare.Delta,
 ) (acktypes.AWSResource, error) {
 	desired := rm.concreteResource(resDesired)
 	latest := rm.concreteResource(resLatest)
@@ -133,7 +131,7 @@ func (rm *resourceManager) Update(
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's Update() method received resource with nil CR object")
 	}
-	updated, err := rm.sdkUpdate(ctx, desired, latest, diffReporter)
+	updated, err := rm.sdkUpdate(ctx, desired, latest, delta)
 	if err != nil {
 		return rm.onError(latest, err)
 	}
@@ -173,7 +171,7 @@ func newResourceManager(
 	cfg ackcfg.Config,
 	log logr.Logger,
 	metrics *ackmetrics.Metrics,
-	rr acktypes.AWSResourceReconciler,
+	rr acktypes.Reconciler,
 	sess *session.Session,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,

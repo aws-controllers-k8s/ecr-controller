@@ -16,10 +16,9 @@
 package repository
 
 import (
-	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
-	acktypes "github.com/aws/aws-controllers-k8s/pkg/types"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sapirt "k8s.io/apimachinery/pkg/runtime"
 	k8sctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -65,37 +64,10 @@ func (d *resourceDescriptor) ResourceFromRuntimeObject(
 	}
 }
 
-// Equal returns true if the two supplied AWSResources have the same content.
-// The underlying types of the two supplied AWSResources should be the same. In
-// other words, the Equal() method should be called with the same concrete
-// implementing AWSResource type
-func (d *resourceDescriptor) Equal(
-	a acktypes.AWSResource,
-	b acktypes.AWSResource,
-) bool {
-	ac := a.(*resource)
-	bc := b.(*resource)
-	opts := []cmp.Option{cmpopts.EquateEmpty()}
-	return cmp.Equal(ac.ko, bc.ko, opts...)
-}
-
-// Diff returns a Reporter which provides the difference between two supplied
-// AWSResources. The underlying types of the two supplied AWSResources should
-// be the same. In other words, the Diff() method should be called with the
-// same concrete implementing AWSResource type
-func (d *resourceDescriptor) Diff(
-	a acktypes.AWSResource,
-	b acktypes.AWSResource,
-) *ackcompare.Reporter {
-	ac := a.(*resource)
-	bc := b.(*resource)
-	var diffReporter ackcompare.Reporter
-	opts := []cmp.Option{
-		cmp.Reporter(&diffReporter),
-		cmp.AllowUnexported(svcapitypes.Repository{}),
-	}
-	cmp.Equal(ac.ko, bc.ko, opts...)
-	return &diffReporter
+// Delta returns an `ackcompare.Delta` object containing the difference between
+// one `AWSResource` and another.
+func (d *resourceDescriptor) Delta(a, b acktypes.AWSResource) *ackcompare.Delta {
+	return newResourceDelta(a.(*resource), b.(*resource))
 }
 
 // UpdateCRStatus accepts an AWSResource object and changes the Status
@@ -170,4 +142,22 @@ func (d *resourceDescriptor) MarkUnmanaged(
 		panic("nil RuntimeMetaObject in AWSResource")
 	}
 	k8sctrlutil.RemoveFinalizer(obj, finalizerString)
+}
+
+// MarkAdopted places descriptors on the custom resource that indicate the
+// resource was not created from within ACK.
+func (d *resourceDescriptor) MarkAdopted(
+	res acktypes.AWSResource,
+) {
+	obj := res.RuntimeMetaObject()
+	if obj == nil {
+		// Should not happen. If it does, there is a bug in the code
+		panic("nil RuntimeMetaObject in AWSResource")
+	}
+	curr := obj.GetAnnotations()
+	if curr == nil {
+		curr = make(map[string]string)
+	}
+	curr[ackv1alpha1.AnnotationAdopted] = "true"
+	obj.SetAnnotations(curr)
 }

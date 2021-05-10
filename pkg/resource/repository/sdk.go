@@ -19,9 +19,9 @@ import (
 	"context"
 	"strings"
 
-	ackv1alpha1 "github.com/aws/aws-controllers-k8s/apis/core/v1alpha1"
-	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
-	ackerr "github.com/aws/aws-controllers-k8s/pkg/errors"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	"github.com/aws/aws-sdk-go/aws"
 	svcsdk "github.com/aws/aws-sdk-go/service/ecr"
 	corev1 "k8s.io/api/core/v1"
@@ -63,11 +63,12 @@ func (rm *resourceManager) sdkFind(
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := r.ko.DeepCopy()
-
 	found := false
 	for _, elem := range resp.Repositories {
 		if elem.CreatedAt != nil {
 			ko.Status.CreatedAt = &metav1.Time{*elem.CreatedAt}
+		} else {
+			ko.Status.CreatedAt = nil
 		}
 		if elem.EncryptionConfiguration != nil {
 			f1 := &svcapitypes.EncryptionConfiguration{}
@@ -78,6 +79,8 @@ func (rm *resourceManager) sdkFind(
 				f1.KMSKey = elem.EncryptionConfiguration.KmsKey
 			}
 			ko.Spec.EncryptionConfiguration = f1
+		} else {
+			ko.Spec.EncryptionConfiguration = nil
 		}
 		if elem.ImageScanningConfiguration != nil {
 			f2 := &svcapitypes.ImageScanningConfiguration{}
@@ -85,12 +88,18 @@ func (rm *resourceManager) sdkFind(
 				f2.ScanOnPush = elem.ImageScanningConfiguration.ScanOnPush
 			}
 			ko.Spec.ImageScanningConfiguration = f2
+		} else {
+			ko.Spec.ImageScanningConfiguration = nil
 		}
 		if elem.ImageTagMutability != nil {
 			ko.Spec.ImageTagMutability = elem.ImageTagMutability
+		} else {
+			ko.Spec.ImageTagMutability = nil
 		}
 		if elem.RegistryId != nil {
 			ko.Status.RegistryID = elem.RegistryId
+		} else {
+			ko.Status.RegistryID = nil
 		}
 		if elem.RepositoryArn != nil {
 			if ko.Status.ACKResourceMetadata == nil {
@@ -106,9 +115,13 @@ func (rm *resourceManager) sdkFind(
 				}
 			}
 			ko.Spec.RepositoryName = elem.RepositoryName
+		} else {
+			ko.Spec.RepositoryName = nil
 		}
 		if elem.RepositoryUri != nil {
 			ko.Status.RepositoryURI = elem.RepositoryUri
+		} else {
+			ko.Status.RepositoryURI = nil
 		}
 		found = true
 		break
@@ -142,7 +155,7 @@ func (rm *resourceManager) sdkCreate(
 	ctx context.Context,
 	r *resource,
 ) (*resource, error) {
-	input, err := rm.newCreateRequestPayload(r)
+	input, err := rm.newCreateRequestPayload(ctx, r)
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +171,13 @@ func (rm *resourceManager) sdkCreate(
 
 	if resp.Repository.CreatedAt != nil {
 		ko.Status.CreatedAt = &metav1.Time{*resp.Repository.CreatedAt}
+	} else {
+		ko.Status.CreatedAt = nil
 	}
 	if resp.Repository.RegistryId != nil {
 		ko.Status.RegistryID = resp.Repository.RegistryId
+	} else {
+		ko.Status.RegistryID = nil
 	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
@@ -171,6 +188,8 @@ func (rm *resourceManager) sdkCreate(
 	}
 	if resp.Repository.RepositoryUri != nil {
 		ko.Status.RepositoryURI = resp.Repository.RepositoryUri
+	} else {
+		ko.Status.RepositoryURI = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -181,6 +200,7 @@ func (rm *resourceManager) sdkCreate(
 // newCreateRequestPayload returns an SDK-specific struct for the HTTP request
 // payload of the Create API call for the resource
 func (rm *resourceManager) newCreateRequestPayload(
+	ctx context.Context,
 	r *resource,
 ) (*svcsdk.CreateRepositoryInput, error) {
 	res := &svcsdk.CreateRepositoryInput{}
@@ -232,9 +252,9 @@ func (rm *resourceManager) sdkUpdate(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
-	diffReporter *ackcompare.Reporter,
+	delta *ackcompare.Delta,
 ) (*resource, error) {
-	return rm.customUpdateRepository(ctx, desired, latest, diffReporter)
+	return rm.customUpdateRepository(ctx, desired, latest, delta)
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
@@ -242,6 +262,7 @@ func (rm *resourceManager) sdkDelete(
 	ctx context.Context,
 	r *resource,
 ) error {
+
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return err
@@ -294,10 +315,13 @@ func (rm *resourceManager) updateConditions(
 
 	// Terminal condition
 	var terminalCondition *ackv1alpha1.Condition = nil
+	var recoverableCondition *ackv1alpha1.Condition = nil
 	for _, condition := range ko.Status.Conditions {
 		if condition.Type == ackv1alpha1.ConditionTypeTerminal {
 			terminalCondition = condition
-			break
+		}
+		if condition.Type == ackv1alpha1.ConditionTypeRecoverable {
+			recoverableCondition = condition
 		}
 	}
 
@@ -312,11 +336,34 @@ func (rm *resourceManager) updateConditions(
 		awsErr, _ := ackerr.AWSError(err)
 		errorMessage := awsErr.Message()
 		terminalCondition.Message = &errorMessage
-	} else if terminalCondition != nil {
-		terminalCondition.Status = corev1.ConditionFalse
-		terminalCondition.Message = nil
+	} else {
+		// Clear the terminal condition if no longer present
+		if terminalCondition != nil {
+			terminalCondition.Status = corev1.ConditionFalse
+			terminalCondition.Message = nil
+		}
+		// Handling Recoverable Conditions
+		if err != nil {
+			if recoverableCondition == nil {
+				// Add a new Condition containing a non-terminal error
+				recoverableCondition = &ackv1alpha1.Condition{
+					Type: ackv1alpha1.ConditionTypeRecoverable,
+				}
+				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
+			}
+			recoverableCondition.Status = corev1.ConditionTrue
+			awsErr, _ := ackerr.AWSError(err)
+			errorMessage := err.Error()
+			if awsErr != nil {
+				errorMessage = awsErr.Message()
+			}
+			recoverableCondition.Message = &errorMessage
+		} else if recoverableCondition != nil {
+			recoverableCondition.Status = corev1.ConditionFalse
+			recoverableCondition.Message = nil
+		}
 	}
-	if terminalCondition != nil {
+	if terminalCondition != nil || recoverableCondition != nil {
 		return &resource{ko}, true // updated
 	}
 	return nil, false // not updated
