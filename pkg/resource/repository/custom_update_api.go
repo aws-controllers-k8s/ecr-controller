@@ -72,7 +72,7 @@ func (rm *resourceManager) updateImageScanningConfiguration(
 ) (*resource, error) {
 	dspec := desired.ko.Spec
 	input := &svcsdk.PutImageScanningConfigurationInput{
-		RepositoryName: aws.String(*dspec.RepositoryName),
+		RepositoryName: aws.String(*dspec.Name),
 	}
 	if dspec.ImageScanningConfiguration == nil {
 		// There isn't any "reset" behaviour and the image scanning
@@ -99,7 +99,7 @@ func (rm *resourceManager) updateImageTagMutability(
 ) (*resource, error) {
 	dspec := desired.ko.Spec
 	input := &svcsdk.PutImageTagMutabilityInput{
-		RepositoryName: aws.String(*dspec.RepositoryName),
+		RepositoryName: aws.String(*dspec.Name),
 	}
 	if dspec.ImageTagMutability == nil {
 		// There isn't any "reset" behaviour and the image scanning

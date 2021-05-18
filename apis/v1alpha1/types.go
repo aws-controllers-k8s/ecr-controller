@@ -28,36 +28,69 @@ var (
 	_ = ackv1alpha1.AWSAccountID("")
 )
 
+// The encryption configuration for the repository. This determines how the
+// contents of your repository are encrypted at rest.
+//
+// By default, when no encryption configuration is set or the AES256 encryption
+// type is used, Amazon ECR uses server-side encryption with Amazon S3-managed
+// encryption keys which encrypts your data at rest using an AES-256 encryption
+// algorithm. This does not require any action on your part.
+//
+// For more control over the encryption of the contents of your repository,
+// you can use server-side encryption with customer master keys (CMKs) stored
+// in AWS Key Management Service (AWS KMS) to encrypt your images. For more
+// information, see Amazon ECR encryption at rest (https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html)
+// in the Amazon Elastic Container Registry User Guide.
 type EncryptionConfiguration struct {
 	EncryptionType *string `json:"encryptionType,omitempty"`
 	KMSKey         *string `json:"kmsKey,omitempty"`
 }
 
+// An object representing an Amazon ECR image.
 type Image struct {
 	RegistryID     *string `json:"registryID,omitempty"`
 	RepositoryName *string `json:"repositoryName,omitempty"`
 }
 
+// An object that describes an image returned by a DescribeImages operation.
 type ImageDetail struct {
 	RegistryID     *string `json:"registryID,omitempty"`
 	RepositoryName *string `json:"repositoryName,omitempty"`
 }
 
+// Contains information about an image scan finding.
 type ImageScanFinding struct {
 	URI *string `json:"uri,omitempty"`
 }
 
+// The image scanning configuration for a repository.
 type ImageScanningConfiguration struct {
 	ScanOnPush *bool `json:"scanOnPush,omitempty"`
 }
 
+// An array of objects representing the details of a replication destination.
 type ReplicationDestination struct {
 	RegistryID *string `json:"registryID,omitempty"`
 }
 
+// An object representing a repository.
 type Repository_SDK struct {
-	CreatedAt                  *metav1.Time                `json:"createdAt,omitempty"`
-	EncryptionConfiguration    *EncryptionConfiguration    `json:"encryptionConfiguration,omitempty"`
+	CreatedAt *metav1.Time `json:"createdAt,omitempty"`
+	// The encryption configuration for the repository. This determines how the
+	// contents of your repository are encrypted at rest.
+	//
+	// By default, when no encryption configuration is set or the AES256 encryption
+	// type is used, Amazon ECR uses server-side encryption with Amazon S3-managed
+	// encryption keys which encrypts your data at rest using an AES-256 encryption
+	// algorithm. This does not require any action on your part.
+	//
+	// For more control over the encryption of the contents of your repository,
+	// you can use server-side encryption with customer master keys (CMKs) stored
+	// in AWS Key Management Service (AWS KMS) to encrypt your images. For more
+	// information, see Amazon ECR encryption at rest (https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html)
+	// in the Amazon Elastic Container Registry User Guide.
+	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
+	// The image scanning configuration for a repository.
 	ImageScanningConfiguration *ImageScanningConfiguration `json:"imageScanningConfiguration,omitempty"`
 	ImageTagMutability         *string                     `json:"imageTagMutability,omitempty"`
 	RegistryID                 *string                     `json:"registryID,omitempty"`
@@ -66,6 +99,10 @@ type Repository_SDK struct {
 	RepositoryURI              *string                     `json:"repositoryURI,omitempty"`
 }
 
+// The metadata that you apply to a resource to help you categorize and organize
+// them. Each tag consists of a key and an optional value, both of which you
+// define. Tag keys can have a maximum character length of 128 characters, and
+// tag values can have a maximum length of 256 characters.
 type Tag struct {
 	Key   *string `json:"key,omitempty"`
 	Value *string `json:"value,omitempty"`

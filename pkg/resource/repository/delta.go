@@ -17,12 +17,6 @@ package repository
 
 import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
-
-	svcapitypes "github.com/aws-controllers-k8s/ecr-controller/apis/v1alpha1"
-)
-
-var (
-	_ = svcapitypes.GroupVersion
 )
 
 // newResourceDelta returns a new `ackcompare.Delta` used to compare two
@@ -74,22 +68,13 @@ func newResourceDelta(
 			delta.Add("Spec.ImageTagMutability", a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName) {
-		delta.Add("Spec.RepositoryName", a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName)
-	} else if a.ko.Spec.RepositoryName != nil && b.ko.Spec.RepositoryName != nil {
-		if *a.ko.Spec.RepositoryName != *b.ko.Spec.RepositoryName {
-			delta.Add("Spec.RepositoryName", a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName)
+	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+		if *a.ko.Spec.Name != *b.ko.Spec.Name {
+			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
 
-	if !equalTagList(a.ko.Spec.Tags, b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-	}
-
 	return delta
-}
-
-func equalTagList(a, b []*svcapitypes.Tag) bool {
-	//TODO(a-hilaly) implement this function
-	return true
 }
