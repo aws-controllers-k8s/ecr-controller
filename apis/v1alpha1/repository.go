@@ -37,7 +37,7 @@ type RepositorySpec struct {
 	// on its own (such as nginx-web-app) or it can be prepended with a namespace
 	// to group the repository into a category (such as project-a/nginx-web-app).
 	// +kubebuilder:validation:Required
-	RepositoryName *string `json:"repositoryName"`
+	Name *string `json:"name"`
 	// The metadata that you apply to the repository to help you categorize and
 	// organize them. Each tag consists of a key and an optional value, both of
 	// which you define. Tag keys can have a maximum character length of 128 characters,

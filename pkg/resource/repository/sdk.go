@@ -63,6 +63,7 @@ func (rm *resourceManager) sdkFind(
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := r.ko.DeepCopy()
+
 	found := false
 	for _, elem := range resp.Repositories {
 		if elem.CreatedAt != nil {
@@ -109,14 +110,14 @@ func (rm *resourceManager) sdkFind(
 			ko.Status.ACKResourceMetadata.ARN = &tmpARN
 		}
 		if elem.RepositoryName != nil {
-			if ko.Spec.RepositoryName != nil {
-				if *elem.RepositoryName != *ko.Spec.RepositoryName {
+			if ko.Spec.Name != nil {
+				if *elem.RepositoryName != *ko.Spec.Name {
 					continue
 				}
 			}
-			ko.Spec.RepositoryName = elem.RepositoryName
+			ko.Spec.Name = elem.RepositoryName
 		} else {
-			ko.Spec.RepositoryName = nil
+			ko.Spec.Name = nil
 		}
 		if elem.RepositoryUri != nil {
 			ko.Status.RepositoryURI = elem.RepositoryUri
@@ -225,8 +226,8 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.ImageTagMutability != nil {
 		res.SetImageTagMutability(*r.ko.Spec.ImageTagMutability)
 	}
-	if r.ko.Spec.RepositoryName != nil {
-		res.SetRepositoryName(*r.ko.Spec.RepositoryName)
+	if r.ko.Spec.Name != nil {
+		res.SetRepositoryName(*r.ko.Spec.Name)
 	}
 	if r.ko.Spec.Tags != nil {
 		f4 := []*svcsdk.Tag{}
@@ -282,8 +283,8 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	if r.ko.Status.RegistryID != nil {
 		res.SetRegistryId(*r.ko.Status.RegistryID)
 	}
-	if r.ko.Spec.RepositoryName != nil {
-		res.SetRepositoryName(*r.ko.Spec.RepositoryName)
+	if r.ko.Spec.Name != nil {
+		res.SetRepositoryName(*r.ko.Spec.Name)
 	}
 
 	return res, nil

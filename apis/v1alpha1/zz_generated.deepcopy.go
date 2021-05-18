@@ -236,8 +236,8 @@ func (in *RepositorySpec) DeepCopyInto(out *RepositorySpec) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.RepositoryName != nil {
-		in, out := &in.RepositoryName, &out.RepositoryName
+	if in.Name != nil {
+		in, out := &in.Name, &out.Name
 		*out = new(string)
 		**out = **in
 	}

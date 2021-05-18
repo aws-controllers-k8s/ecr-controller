@@ -25,6 +25,11 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/ecr-controller/apis/v1alpha1"
 )
 
+// Hack to avoid import errors during build...
+var (
+	_ = &ackerrors.MissingNameIdentifier
+)
+
 // resource implements the `aws-controller-k8s/runtime/pkg/types.AWSResource`
 // interface
 type resource struct {
@@ -80,6 +85,6 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 	if identifier.NameOrID == nil {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Spec.RepositoryName = identifier.NameOrID
+	r.ko.Spec.Name = identifier.NameOrID
 	return nil
 }

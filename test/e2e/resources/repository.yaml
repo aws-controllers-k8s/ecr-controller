@@ -3,7 +3,7 @@ kind: Repository
 metadata:
   name: $REPOSITORY_NAME
 spec:
-  repositoryName: $REPOSITORY_NAME
+  name: $REPOSITORY_NAME
   imageScanningConfiguration:
     scanOnPush: false
   imageTagMutability: MUTABLE
