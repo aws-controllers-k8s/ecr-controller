@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/controller
-  tag: ecr-v0.0.3
+  tag: ecr-v0.0.4
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -27,6 +27,9 @@ resources:
 aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
+
+# If specified, the service controller will watch for object creation only in the provided namespace
+watchNamespace: ""
 
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.
