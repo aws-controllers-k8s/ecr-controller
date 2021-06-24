@@ -34,7 +34,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: RepositorySpec defines the desired state of Repository
+            description: "RepositorySpec defines the desired state of Repository.
+              \n An object representing a repository."
             properties:
               encryptionConfiguration:
                 description: The encryption configuration for the repository. This
