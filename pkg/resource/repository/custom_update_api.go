@@ -49,13 +49,13 @@ func (rm *resourceManager) customUpdateRepository(
 	var err error
 	var updated *resource
 	updated = desired
-	if delta.DifferentAt("ImageScanningConfiguration") {
+	if delta.DifferentAt("Spec.ImageScanningConfiguration") {
 		updated, err = rm.updateImageScanningConfiguration(ctx, updated)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if delta.DifferentAt("ImageTagMutability") {
+	if delta.DifferentAt("Spec.ImageTagMutability") {
 		updated, err = rm.updateImageTagMutability(ctx, updated)
 		if err != nil {
 			return nil, err

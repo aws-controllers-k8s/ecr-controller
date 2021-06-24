@@ -20,7 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// RepositorySpec defines the desired state of Repository
+// RepositorySpec defines the desired state of Repository.
+//
+// An object representing a repository.
 type RepositorySpec struct {
 	// The encryption configuration for the repository. This determines how the
 	// contents of your repository are encrypted at rest.
