@@ -50,6 +50,14 @@ func (rm *resourceManager) sdkFind(
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkFind")
 	defer exit(err)
+
+	// If any required fields in the input shape are missing, AWS resource is
+	// not created yet. Return NotFound here to indicate to callers that the
+	// resource isn't yet created.
+	if rm.requiredFieldsMissingFromReadManyInput(r) {
+		return nil, ackerr.NotFound
+	}
+
 	input, err := rm.newListRequestPayload(r)
 	if err != nil {
 		return nil, err
@@ -139,6 +147,15 @@ func (rm *resourceManager) sdkFind(
 	return &resource{ko}, nil
 }
 
+// requiredFieldsMissingFromReadManyInput returns true if there are any fields
+// for the ReadMany Input shape that are required but not present in the
+// resource's Spec or Status
+func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
+	r *resource,
+) bool {
+	return false
+}
+
 // newListRequestPayload returns SDK-specific struct for the HTTP request
 // payload of the List API call for the resource
 func (rm *resourceManager) newListRequestPayload(
@@ -184,6 +201,32 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.CreatedAt = nil
 	}
+	if resp.Repository.EncryptionConfiguration != nil {
+		f1 := &svcapitypes.EncryptionConfiguration{}
+		if resp.Repository.EncryptionConfiguration.EncryptionType != nil {
+			f1.EncryptionType = resp.Repository.EncryptionConfiguration.EncryptionType
+		}
+		if resp.Repository.EncryptionConfiguration.KmsKey != nil {
+			f1.KMSKey = resp.Repository.EncryptionConfiguration.KmsKey
+		}
+		ko.Spec.EncryptionConfiguration = f1
+	} else {
+		ko.Spec.EncryptionConfiguration = nil
+	}
+	if resp.Repository.ImageScanningConfiguration != nil {
+		f2 := &svcapitypes.ImageScanningConfiguration{}
+		if resp.Repository.ImageScanningConfiguration.ScanOnPush != nil {
+			f2.ScanOnPush = resp.Repository.ImageScanningConfiguration.ScanOnPush
+		}
+		ko.Spec.ImageScanningConfiguration = f2
+	} else {
+		ko.Spec.ImageScanningConfiguration = nil
+	}
+	if resp.Repository.ImageTagMutability != nil {
+		ko.Spec.ImageTagMutability = resp.Repository.ImageTagMutability
+	} else {
+		ko.Spec.ImageTagMutability = nil
+	}
 	if resp.Repository.RegistryId != nil {
 		ko.Status.RegistryID = resp.Repository.RegistryId
 	} else {
@@ -195,6 +238,11 @@ func (rm *resourceManager) sdkCreate(
 	if resp.Repository.RepositoryArn != nil {
 		arn := ackv1alpha1.AWSResourceName(*resp.Repository.RepositoryArn)
 		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
+	if resp.Repository.RepositoryName != nil {
+		ko.Spec.Name = resp.Repository.RepositoryName
+	} else {
+		ko.Spec.Name = nil
 	}
 	if resp.Repository.RepositoryUri != nil {
 		ko.Status.RepositoryURI = resp.Repository.RepositoryUri
@@ -270,17 +318,19 @@ func (rm *resourceManager) sdkUpdate(
 func (rm *resourceManager) sdkDelete(
 	ctx context.Context,
 	r *resource,
-) (err error) {
+) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkDelete")
 	defer exit(err)
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	_, err = rm.sdkapi.DeleteRepositoryWithContext(ctx, input)
+	var resp *svcsdk.DeleteRepositoryOutput
+	_ = resp
+	resp, err = rm.sdkapi.DeleteRepositoryWithContext(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteRepository", err)
-	return err
+	return nil, err
 }
 
 // newDeleteRequestPayload returns an SDK-specific struct for the HTTP request
@@ -341,16 +391,21 @@ func (rm *resourceManager) updateConditions(
 		}
 	}
 
-	if rm.terminalAWSError(err) {
+	if rm.terminalAWSError(err) || err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
 				Type: ackv1alpha1.ConditionTypeTerminal,
 			}
 			ko.Status.Conditions = append(ko.Status.Conditions, terminalCondition)
 		}
+		var errorMessage = ""
+		if err == ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound {
+			errorMessage = err.Error()
+		} else {
+			awsErr, _ := ackerr.AWSError(err)
+			errorMessage = awsErr.Message()
+		}
 		terminalCondition.Status = corev1.ConditionTrue
-		awsErr, _ := ackerr.AWSError(err)
-		errorMessage := awsErr.Message()
 		terminalCondition.Message = &errorMessage
 	} else {
 		// Clear the terminal condition if no longer present

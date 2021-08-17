@@ -52,18 +52,23 @@ type RepositoryStatus struct {
 	// All CRs managed by ACK have a common `Status.ACKResourceMetadata` member
 	// that is used to contain resource sync state, account ownership,
 	// constructed ARN for the resource
+	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
 	// All CRS managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource
+	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
 	// The date and time, in JavaScript date format, when the repository was created.
+	// +kubebuilder:validation:Optional
 	CreatedAt *metav1.Time `json:"createdAt,omitempty"`
 	// The AWS account ID associated with the registry that contains the repository.
+	// +kubebuilder:validation:Optional
 	RegistryID *string `json:"registryID,omitempty"`
 	// The URI for the repository. You can use this URI for container image push
 	// and pull operations.
+	// +kubebuilder:validation:Optional
 	RepositoryURI *string `json:"repositoryURI,omitempty"`
 }
 

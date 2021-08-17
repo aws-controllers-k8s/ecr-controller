@@ -84,12 +84,22 @@ func (r *resource) SetObjectMeta(meta metav1.ObjectMeta) {
 	r.ko.ObjectMeta = meta
 }
 
+// SetStatus will set the Status field for the resource
+func (r *resource) SetStatus(desired acktypes.AWSResource) {
+	r.ko.Status = desired.(*resource).ko.Status
+}
+
 // SetIdentifiers sets the Spec or Status field that is referenced as the unique
 // resource identifier
 func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error {
-	if identifier.NameOrID == nil {
+	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Spec.Name = identifier.NameOrID
+
+	f0, f0ok := identifier.AdditionalKeys["registryID"]
+	if f0ok {
+		r.ko.Status.RegistryID = &f0
+	}
+
 	return nil
 }

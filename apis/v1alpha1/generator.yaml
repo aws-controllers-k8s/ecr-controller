@@ -1,0 +1,22 @@
+resources:
+  Repository:
+    renames:
+      operations:
+        CreateRepository:
+          input_fields:
+            RepositoryName: Name
+        DeleteRepository:
+          input_fields:
+            RepositoryName: Name
+        DescribeRepositories:
+          input_fields:
+            RepositoryName: Name
+    exceptions:
+      errors:
+        404:
+          code: RepositoryNotFoundException
+    list_operation:
+      match_fields:
+        - Name
+    update_operation:
+      custom_method_name: customUpdateRepository
