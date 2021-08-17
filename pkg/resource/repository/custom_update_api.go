@@ -20,6 +20,7 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/ecr"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 )
 
 var (
@@ -47,6 +48,10 @@ func (rm *resourceManager) customUpdateRepository(
 	delta *ackcompare.Delta,
 ) (*resource, error) {
 	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.customUpdateRepository")
+	defer exit(err)
+
 	var updated *resource
 	updated = desired
 	if delta.DifferentAt("Spec.ImageScanningConfiguration") {
@@ -70,6 +75,11 @@ func (rm *resourceManager) updateImageScanningConfiguration(
 	ctx context.Context,
 	desired *resource,
 ) (*resource, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.updateImageScanningConfiguration")
+	defer exit(err)
+
 	dspec := desired.ko.Spec
 	input := &svcsdk.PutImageScanningConfigurationInput{
 		RepositoryName: aws.String(*dspec.Name),
@@ -84,7 +94,8 @@ func (rm *resourceManager) updateImageScanningConfiguration(
 		}
 		input.SetImageScanningConfiguration(&isc)
 	}
-	_, err := rm.sdkapi.PutImageScanningConfigurationWithContext(ctx, input)
+	_, err = rm.sdkapi.PutImageScanningConfigurationWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutImageScanningConfiguration", err)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +108,11 @@ func (rm *resourceManager) updateImageTagMutability(
 	ctx context.Context,
 	desired *resource,
 ) (*resource, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.updateImageTagMutability")
+	defer exit(err)
+
 	dspec := desired.ko.Spec
 	input := &svcsdk.PutImageTagMutabilityInput{
 		RepositoryName: aws.String(*dspec.Name),
@@ -108,7 +124,8 @@ func (rm *resourceManager) updateImageTagMutability(
 	} else {
 		input.SetImageTagMutability(*dspec.ImageTagMutability)
 	}
-	_, err := rm.sdkapi.PutImageTagMutabilityWithContext(ctx, input)
+	_, err = rm.sdkapi.PutImageTagMutabilityWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutImageTagMutability", err)
 	if err != nil {
 		return nil, err
 	}
