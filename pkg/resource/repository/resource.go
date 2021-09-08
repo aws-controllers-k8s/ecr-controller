@@ -59,7 +59,7 @@ func (r *resource) RuntimeObject() k8srt.Object {
 // MetaObject returns the Kubernetes apimachinery/apis/meta/v1.Object
 // representation of the AWSResource
 func (r *resource) MetaObject() metav1.Object {
-	return r.ko
+	return r.ko.GetObjectMeta()
 }
 
 // RuntimeMetaObject returns an object that implements both the Kubernetes
@@ -96,10 +96,16 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 		return ackerrors.MissingNameIdentifier
 	}
 
-	f0, f0ok := identifier.AdditionalKeys["registryID"]
-	if f0ok {
-		r.ko.Status.RegistryID = &f0
+	f2, f2ok := identifier.AdditionalKeys["registryID"]
+	if f2ok {
+		r.ko.Status.RegistryID = &f2
 	}
 
 	return nil
+}
+
+// DeepCopy will return a copy of the resource
+func (r *resource) DeepCopy() acktypes.AWSResource {
+	koCopy := r.ko.DeepCopy()
+	return &resource{koCopy}
 }
