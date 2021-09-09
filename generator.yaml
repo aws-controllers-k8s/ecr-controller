@@ -1,3 +1,6 @@
+operations:
+  DescribeRepositories:
+    primary_identifier_field_name: Name
 resources:
   Repository:
     renames:
