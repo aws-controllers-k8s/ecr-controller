@@ -1,8 +1,12 @@
-operations:
-  DescribeRepositories:
-    primary_identifier_field_name: Name
 resources:
   Repository:
+    fields:
+      Name:
+        is_primary_key: true
+        is_required: true
+        from:
+          operation: CreateRepository
+          path: RepositoryName
     renames:
       operations:
         CreateRepository:
