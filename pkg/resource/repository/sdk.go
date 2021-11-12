@@ -147,6 +147,9 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
+	if err := rm.setResourceAdditionalFields(ctx, r, ko); err != nil {
+		return nil, err
+	}
 	return &resource{ko}, nil
 }
 

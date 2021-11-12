@@ -35,6 +35,8 @@ type RepositorySpec struct {
 	// be overwritten. If IMMUTABLE is specified, all image tags within the repository
 	// will be immutable which will prevent them from being overwritten.
 	ImageTagMutability *string `json:"imageTagMutability,omitempty"`
+	// The JSON repository policy text to apply to the repository.
+	LifecyclePolicy *string `json:"lifecyclePolicy,omitempty"`
 	// The name to use for the repository. The repository name may be specified
 	// on its own (such as nginx-web-app) or it can be prepended with a namespace
 	// to group the repository into a category (such as project-a/nginx-web-app).

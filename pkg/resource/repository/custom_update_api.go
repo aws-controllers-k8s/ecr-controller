@@ -66,6 +66,12 @@ func (rm *resourceManager) customUpdateRepository(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.LifecyclePolicy") {
+		updated, err = rm.updateLifecyclePolicy(ctx, updated)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return updated, nil
 }
 
@@ -126,6 +132,64 @@ func (rm *resourceManager) updateImageTagMutability(
 	}
 	_, err = rm.sdkapi.PutImageTagMutabilityWithContext(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutImageTagMutability", err)
+	if err != nil {
+		return nil, err
+	}
+	return desired, nil
+}
+
+// updateLifecyclePolicy calls the PutLifecyclePolicy ECR API call for a
+// specific repository
+func (rm *resourceManager) updateLifecyclePolicy(
+	ctx context.Context,
+	desired *resource,
+) (*resource, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.updateRepositoryLifecyclePolicy")
+	defer exit(err)
+
+	dspec := desired.ko.Spec
+	dstatus := desired.ko.Status
+
+	if dspec.LifecyclePolicy == nil || *dspec.LifecyclePolicy == "" {
+		return rm.deleteLifecyclePolicy(ctx, desired)
+	}
+
+	input := &svcsdk.PutLifecyclePolicyInput{
+		RepositoryName:      aws.String(*dspec.Name),
+		RegistryId:          aws.String(*dstatus.RegistryID),
+		LifecyclePolicyText: aws.String(*dspec.LifecyclePolicy),
+	}
+
+	_, err = rm.sdkapi.PutLifecyclePolicyWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutLifecyclePolicy", err)
+	if err != nil {
+		return nil, err
+	}
+	return desired, nil
+}
+
+// deleteLifecyclePolicy calls the DeleteLifecyclePolicy ECR API call for a
+// specific repository
+func (rm *resourceManager) deleteLifecyclePolicy(
+	ctx context.Context,
+	desired *resource,
+) (*resource, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteLifecyclePolicy")
+	defer exit(err)
+
+	dspec := desired.ko.Spec
+	dstatus := desired.ko.Status
+	input := &svcsdk.DeleteLifecyclePolicyInput{
+		RepositoryName: aws.String(*dspec.Name),
+		RegistryId:     aws.String(*dstatus.RegistryID),
+	}
+
+	_, err = rm.sdkapi.DeleteLifecyclePolicyWithContext(ctx, input)
+	rm.metrics.RecordAPICall("DELETE", "DeleteLifecyclePolicy", err)
 	if err != nil {
 		return nil, err
 	}
