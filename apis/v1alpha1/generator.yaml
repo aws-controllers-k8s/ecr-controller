@@ -7,6 +7,10 @@ resources:
         from:
           operation: CreateRepository
           path: RepositoryName
+      LifecyclePolicy:
+        from:
+          operation: PutLifecyclePolicy
+          path: LifecyclePolicyText
     renames:
       operations:
         CreateRepository:
@@ -25,5 +29,8 @@ resources:
     list_operation:
       match_fields:
         - Name
+    hooks:
+      sdk_read_many_post_set_output:
+        template_path: hooks/repository/sdk_read_many_post_set_output.go.tpl
     update_operation:
       custom_method_name: customUpdateRepository

@@ -77,6 +77,13 @@ func newResourceDelta(
 			delta.Add("Spec.ImageTagMutability", a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.LifecyclePolicy, b.ko.Spec.LifecyclePolicy) {
+		delta.Add("Spec.LifecyclePolicy", a.ko.Spec.LifecyclePolicy, b.ko.Spec.LifecyclePolicy)
+	} else if a.ko.Spec.LifecyclePolicy != nil && b.ko.Spec.LifecyclePolicy != nil {
+		if *a.ko.Spec.LifecyclePolicy != *b.ko.Spec.LifecyclePolicy {
+			delta.Add("Spec.LifecyclePolicy", a.ko.Spec.LifecyclePolicy, b.ko.Spec.LifecyclePolicy)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {

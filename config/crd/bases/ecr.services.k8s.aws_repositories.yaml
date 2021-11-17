@@ -62,6 +62,9 @@ spec:
                   all image tags within the repository will be immutable which will
                   prevent them from being overwritten.
                 type: string
+              lifecyclePolicy:
+                description: The JSON repository policy text to apply to the repository.
+                type: string
               name:
                 description: The name to use for the repository. The repository name
                   may be specified on its own (such as nginx-web-app) or it can be
