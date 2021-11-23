@@ -113,9 +113,9 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.ImageTagMutability = nil
 		}
 		if elem.RegistryId != nil {
-			ko.Status.RegistryID = elem.RegistryId
+			ko.Spec.RegistryID = elem.RegistryId
 		} else {
-			ko.Status.RegistryID = nil
+			ko.Spec.RegistryID = nil
 		}
 		if elem.RepositoryArn != nil {
 			if ko.Status.ACKResourceMetadata == nil {
@@ -147,7 +147,7 @@ func (rm *resourceManager) sdkFind(
 	}
 
 	rm.setStatusDefaults(ko)
-	if err := rm.setResourceAdditionalFields(ctx, r, ko); err != nil {
+	if err := rm.setResourceAdditionalFields(ctx, ko); err != nil {
 		return nil, err
 	}
 	return &resource{ko}, nil
@@ -169,8 +169,8 @@ func (rm *resourceManager) newListRequestPayload(
 ) (*svcsdk.DescribeRepositoriesInput, error) {
 	res := &svcsdk.DescribeRepositoriesInput{}
 
-	if r.ko.Status.RegistryID != nil {
-		res.SetRegistryId(*r.ko.Status.RegistryID)
+	if r.ko.Spec.RegistryID != nil {
+		res.SetRegistryId(*r.ko.Spec.RegistryID)
 	}
 
 	return res, nil
@@ -234,9 +234,9 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.ImageTagMutability = nil
 	}
 	if resp.Repository.RegistryId != nil {
-		ko.Status.RegistryID = resp.Repository.RegistryId
+		ko.Spec.RegistryID = resp.Repository.RegistryId
 	} else {
-		ko.Status.RegistryID = nil
+		ko.Spec.RegistryID = nil
 	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
@@ -288,22 +288,25 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.ImageTagMutability != nil {
 		res.SetImageTagMutability(*r.ko.Spec.ImageTagMutability)
 	}
+	if r.ko.Spec.RegistryID != nil {
+		res.SetRegistryId(*r.ko.Spec.RegistryID)
+	}
 	if r.ko.Spec.Name != nil {
 		res.SetRepositoryName(*r.ko.Spec.Name)
 	}
 	if r.ko.Spec.Tags != nil {
-		f4 := []*svcsdk.Tag{}
-		for _, f4iter := range r.ko.Spec.Tags {
-			f4elem := &svcsdk.Tag{}
-			if f4iter.Key != nil {
-				f4elem.SetKey(*f4iter.Key)
+		f5 := []*svcsdk.Tag{}
+		for _, f5iter := range r.ko.Spec.Tags {
+			f5elem := &svcsdk.Tag{}
+			if f5iter.Key != nil {
+				f5elem.SetKey(*f5iter.Key)
 			}
-			if f4iter.Value != nil {
-				f4elem.SetValue(*f4iter.Value)
+			if f5iter.Value != nil {
+				f5elem.SetValue(*f5iter.Value)
 			}
-			f4 = append(f4, f4elem)
+			f5 = append(f5, f5elem)
 		}
-		res.SetTags(f4)
+		res.SetTags(f5)
 	}
 
 	return res, nil
@@ -346,8 +349,8 @@ func (rm *resourceManager) newDeleteRequestPayload(
 ) (*svcsdk.DeleteRepositoryInput, error) {
 	res := &svcsdk.DeleteRepositoryInput{}
 
-	if r.ko.Status.RegistryID != nil {
-		res.SetRegistryId(*r.ko.Status.RegistryID)
+	if r.ko.Spec.RegistryID != nil {
+		res.SetRegistryId(*r.ko.Spec.RegistryID)
 	}
 	if r.ko.Spec.Name != nil {
 		res.SetRepositoryName(*r.ko.Spec.Name)

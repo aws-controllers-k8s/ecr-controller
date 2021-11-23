@@ -99,7 +99,7 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 
 	f2, f2ok := identifier.AdditionalKeys["registryID"]
 	if f2ok {
-		r.ko.Status.RegistryID = &f2
+		r.ko.Spec.RegistryID = &f2
 	}
 
 	return nil
