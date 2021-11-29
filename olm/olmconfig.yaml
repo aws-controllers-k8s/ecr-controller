@@ -1,0 +1,36 @@
+---
+annotations:
+  capabilityLevel: Basic Install
+  shortDescription: AWS ECR controller is a service controller for managing ECR resources
+    in Kubernetes
+displayName: AWS Controllers for Kubernetes - Amazon ECR
+description: |-
+  Manage Amazon Elastic Container Registry (ECR) resources in AWS from within your Kubernetes cluster.
+
+
+  **About Amazon ECR**
+
+
+  Amazon Elastic Container Registry (Amazon ECR) is an AWS managed container image registry service that is secure, scalable, and reliable. Amazon ECR supports private repositories with resource-based permissions using AWS IAM. This is so that specified users or Amazon EC2 instances can access your container repositories and images. You can use your preferred CLI to push, pull, and manage Docker images, Open Container Initiative (OCI) images, and OCI compatible artifacts.
+
+
+  **About the AWS Controllers for Kubernetes**
+
+
+  This controller is a component of the [AWS Controller for Kubernetes](https://github.com/aws/aws-controllers-k8s)
+  project. This project is currently in **developer preview**.
+
+
+  **Pre-Installation Steps**
+
+
+  Please follow the following link: [Red Hat OpenShift](https://aws-controllers-k8s.github.io/community/docs/user-docs/openshift/)
+samples:
+- kind: Repository
+  spec: '{}'
+maintainers:
+- name: "ecr maintainer team"
+  email: "ack-maintainers@amazon.com"
+links: 
+- name: Amazon ECR Developer Resources
+  url: https://aws.amazon.com/ecr/resources/
