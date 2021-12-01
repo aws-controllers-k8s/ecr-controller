@@ -42,6 +42,9 @@ type RepositorySpec struct {
 	// to group the repository into a category (such as project-a/nginx-web-app).
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
+	// The AWS account ID associated with the registry to create the repository.
+	// If you do not specify a registry, the default registry is assumed.
+	RegistryID *string `json:"registryID,omitempty"`
 	// The metadata that you apply to the repository to help you categorize and
 	// organize them. Each tag consists of a key and an optional value, both of
 	// which you define. Tag keys can have a maximum character length of 128 characters,
@@ -65,9 +68,6 @@ type RepositoryStatus struct {
 	// The date and time, in JavaScript date format, when the repository was created.
 	// +kubebuilder:validation:Optional
 	CreatedAt *metav1.Time `json:"createdAt,omitempty"`
-	// The AWS account ID associated with the registry that contains the repository.
-	// +kubebuilder:validation:Optional
-	RegistryID *string `json:"registryID,omitempty"`
 	// The URI for the repository. You can use this URI for container image push
 	// and pull operations.
 	// +kubebuilder:validation:Optional

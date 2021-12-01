@@ -37,9 +37,9 @@ var (
 // algorithm. This does not require any action on your part.
 //
 // For more control over the encryption of the contents of your repository,
-// you can use server-side encryption with customer master keys (CMKs) stored
-// in AWS Key Management Service (AWS KMS) to encrypt your images. For more
-// information, see Amazon ECR encryption at rest (https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html)
+// you can use server-side encryption with Key Management Service key stored
+// in Key Management Service (KMS) to encrypt your images. For more information,
+// see Amazon ECR encryption at rest (https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html)
 // in the Amazon Elastic Container Registry User Guide.
 type EncryptionConfiguration struct {
 	EncryptionType *string `json:"encryptionType,omitempty"`
@@ -58,6 +58,11 @@ type ImageDetail struct {
 	RepositoryName *string `json:"repositoryName,omitempty"`
 }
 
+// The status of the replication process for an image.
+type ImageReplicationStatus struct {
+	RegistryID *string `json:"registryID,omitempty"`
+}
+
 // Contains information about an image scan finding.
 type ImageScanFinding struct {
 	URI *string `json:"uri,omitempty"`
@@ -68,7 +73,7 @@ type ImageScanningConfiguration struct {
 	ScanOnPush *bool `json:"scanOnPush,omitempty"`
 }
 
-// An array of objects representing the details of a replication destination.
+// An array of objects representing the destination for a replication rule.
 type ReplicationDestination struct {
 	RegistryID *string `json:"registryID,omitempty"`
 }
@@ -85,9 +90,9 @@ type Repository_SDK struct {
 	// algorithm. This does not require any action on your part.
 	//
 	// For more control over the encryption of the contents of your repository,
-	// you can use server-side encryption with customer master keys (CMKs) stored
-	// in AWS Key Management Service (AWS KMS) to encrypt your images. For more
-	// information, see Amazon ECR encryption at rest (https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html)
+	// you can use server-side encryption with Key Management Service key stored
+	// in Key Management Service (KMS) to encrypt your images. For more information,
+	// see Amazon ECR encryption at rest (https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html)
 	// in the Amazon Elastic Container Registry User Guide.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 	// The image scanning configuration for a repository.

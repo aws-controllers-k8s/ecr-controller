@@ -74,9 +74,6 @@ class TestRepository:
     def repository_exists(self, ecr_client, repository_name: str) -> bool:
         return self.get_repository(ecr_client, repository_name) is not None
 
-    def test_smoke(self, ecr_client):
-        self.test_basic_repository(ecr_client=ecr_client)
-
     def test_basic_repository(self, ecr_client):
         resource_name = random_suffix_name("ecr-repository", 24)
 
@@ -103,8 +100,8 @@ class TestRepository:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check ECR repository exists
-        repo = self.repository_exists(ecr_client, resource_name)
-        assert repo is not None
+        exists = self.repository_exists(ecr_client, resource_name)
+        assert exists
 
         # Update CR
         cr["spec"]["imageScanningConfiguration"]["scanOnPush"] = True
@@ -154,11 +151,11 @@ class TestRepository:
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check ECR repository exists
-        repo = self.repository_exists(ecr_client, resource_name)
+        repo = self.get_repository(ecr_client, resource_name)
         assert repo is not None
 
         # Check ECR repository lifecycle policy exists
-        lifecycle_policy = self.get_lifecycle_policy(ecr_client, resource_name, cr["status"]["registryID"])
+        lifecycle_policy = self.get_lifecycle_policy(ecr_client, resource_name, repo["registryId"])
         assert lifecycle_policy == LIFECYCLE_POLICY_FILTERING_ON_IMAGE_AGE
 
         # Remove lifecycle policy
@@ -168,7 +165,7 @@ class TestRepository:
         k8s.patch_custom_resource(ref, cr)
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
-        lifecycle_policy = self.get_lifecycle_policy(ecr_client, resource_name, cr["status"]["registryID"])
+        lifecycle_policy = self.get_lifecycle_policy(ecr_client, resource_name, repo["registryId"])
         assert lifecycle_policy == ""
 
         # Delete k8s resource

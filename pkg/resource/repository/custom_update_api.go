@@ -150,7 +150,6 @@ func (rm *resourceManager) updateLifecyclePolicy(
 	defer exit(err)
 
 	dspec := desired.ko.Spec
-	dstatus := desired.ko.Status
 
 	if dspec.LifecyclePolicy == nil || *dspec.LifecyclePolicy == "" {
 		return rm.deleteLifecyclePolicy(ctx, desired)
@@ -158,7 +157,7 @@ func (rm *resourceManager) updateLifecyclePolicy(
 
 	input := &svcsdk.PutLifecyclePolicyInput{
 		RepositoryName:      aws.String(*dspec.Name),
-		RegistryId:          aws.String(*dstatus.RegistryID),
+		RegistryId:          aws.String(*dspec.RegistryID),
 		LifecyclePolicyText: aws.String(*dspec.LifecyclePolicy),
 	}
 
@@ -182,10 +181,9 @@ func (rm *resourceManager) deleteLifecyclePolicy(
 	defer exit(err)
 
 	dspec := desired.ko.Spec
-	dstatus := desired.ko.Status
 	input := &svcsdk.DeleteLifecyclePolicyInput{
 		RepositoryName: aws.String(*dspec.Name),
-		RegistryId:     aws.String(*dstatus.RegistryID),
+		RegistryId:     aws.String(*dspec.RegistryID),
 	}
 
 	_, err = rm.sdkapi.DeleteLifecyclePolicyWithContext(ctx, input)

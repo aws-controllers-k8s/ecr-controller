@@ -71,6 +71,11 @@ spec:
                   prepended with a namespace to group the repository into a category
                   (such as project-a/nginx-web-app).
                 type: string
+              registryID:
+                description: The AWS account ID associated with the registry to create
+                  the repository. If you do not specify a registry, the default registry
+                  is assumed.
+                type: string
               tags:
                 description: The metadata that you apply to the repository to help
                   you categorize and organize them. Each tag consists of a key and
@@ -156,10 +161,6 @@ spec:
                 description: The date and time, in JavaScript date format, when the
                   repository was created.
                 format: date-time
-                type: string
-              registryID:
-                description: The AWS account ID associated with the registry that
-                  contains the repository.
                 type: string
               repositoryURI:
                 description: The URI for the repository. You can use this URI for

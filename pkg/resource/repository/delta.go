@@ -91,6 +91,13 @@ func newResourceDelta(
 			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RegistryID, b.ko.Spec.RegistryID) {
+		delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
+	} else if a.ko.Spec.RegistryID != nil && b.ko.Spec.RegistryID != nil {
+		if *a.ko.Spec.RegistryID != *b.ko.Spec.RegistryID {
+			delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
+		}
+	}
 	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
