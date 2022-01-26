@@ -40,6 +40,7 @@ func newResourceDelta(
 		delta.Add("", a, b)
 		return delta
 	}
+	customPreCompare(delta, a, b)
 
 	if ackcompare.HasNilDifference(a.ko.Spec.EncryptionConfiguration, b.ko.Spec.EncryptionConfiguration) {
 		delta.Add("Spec.EncryptionConfiguration", a.ko.Spec.EncryptionConfiguration, b.ko.Spec.EncryptionConfiguration)
@@ -97,9 +98,6 @@ func newResourceDelta(
 		if *a.ko.Spec.RegistryID != *b.ko.Spec.RegistryID {
 			delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
 		}
-	}
-	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
-		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 
 	return delta
