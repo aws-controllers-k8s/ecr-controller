@@ -11,6 +11,9 @@ resources:
         from:
           operation: PutLifecyclePolicy
           path: LifecyclePolicyText
+      Tags:
+        compare:
+          is_ignored: true
     renames:
       operations:
         CreateRepository:
@@ -30,6 +33,8 @@ resources:
       match_fields:
         - Name
     hooks:
+      delta_pre_compare:
+        code: customPreCompare(delta, a, b)
       sdk_read_many_post_set_output:
         template_path: hooks/repository/sdk_read_many_post_set_output.go.tpl
     update_operation:

@@ -72,6 +72,12 @@ func (rm *resourceManager) customUpdateRepository(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.Tags") {
+		err = rm.syncRepositoryTags(ctx, latest, desired)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return updated, nil
 }
 
@@ -192,4 +198,49 @@ func (rm *resourceManager) deleteLifecyclePolicy(
 		return nil, err
 	}
 	return desired, nil
+}
+
+// syncRepositoryTags updates an ECR repository tags.
+func (rm *resourceManager) syncRepositoryTags(
+	ctx context.Context,
+	latest *resource,
+	desired *resource,
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.syncRepositoryTags")
+	defer exit(err)
+
+	added, updated, removed := computeTagsDelta(latest.ko.Spec.Tags, desired.ko.Spec.Tags)
+
+	// Tags to create
+	added = append(added, updated...)
+
+	if len(removed) > 0 {
+		_, err = rm.sdkapi.UntagResourceWithContext(
+			ctx,
+			&svcsdk.UntagResourceInput{
+				ResourceArn: (*string)(latest.ko.Status.ACKResourceMetadata.ARN),
+				TagKeys:     removed,
+			},
+		)
+		rm.metrics.RecordAPICall("UPDATE", "UntagResource", err)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(added) > 0 {
+		_, err = rm.sdkapi.TagResourceWithContext(
+			ctx,
+			&svcsdk.TagResourceInput{
+				ResourceArn: (*string)(latest.ko.Status.ACKResourceMetadata.ARN),
+				Tags:        sdkTagsFromResourceTags(added),
+			},
+		)
+		rm.metrics.RecordAPICall("UPDATE", "TagResource", err)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
