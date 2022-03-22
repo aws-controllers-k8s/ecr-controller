@@ -159,7 +159,8 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
 	r *resource,
 ) bool {
-	return false
+	return r.ko.Spec.Name == nil
+
 }
 
 // newListRequestPayload returns SDK-specific struct for the HTTP request
@@ -171,6 +172,11 @@ func (rm *resourceManager) newListRequestPayload(
 
 	if r.ko.Spec.RegistryID != nil {
 		res.SetRegistryId(*r.ko.Spec.RegistryID)
+	}
+	if r.ko.Spec.Name != nil {
+		f3 := []*string{}
+		f3 = append(f3, r.ko.Spec.Name)
+		res.SetRepositoryNames(f3)
 	}
 
 	return res, nil
@@ -365,6 +371,9 @@ func (rm *resourceManager) setStatusDefaults(
 ) {
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if ko.Status.ACKResourceMetadata.Region == nil {
+		ko.Status.ACKResourceMetadata.Region = &rm.awsRegion
 	}
 	if ko.Status.ACKResourceMetadata.OwnerAccountID == nil {
 		ko.Status.ACKResourceMetadata.OwnerAccountID = &rm.awsAccountID
