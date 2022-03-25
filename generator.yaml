@@ -14,6 +14,8 @@ resources:
       Tags:
         compare:
           is_ignored: true
+      RegistryID:
+        late_initialize: {}
     renames:
       operations:
         CreateRepository:
