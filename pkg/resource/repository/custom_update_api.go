@@ -72,6 +72,12 @@ func (rm *resourceManager) customUpdateRepository(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.Policy") {
+		updated, err = rm.updateRepositoryPolicy(ctx, updated)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if delta.DifferentAt("Spec.Tags") {
 		err = rm.syncRepositoryTags(ctx, latest, desired)
 		if err != nil {
@@ -162,9 +168,9 @@ func (rm *resourceManager) updateLifecyclePolicy(
 	}
 
 	input := &svcsdk.PutLifecyclePolicyInput{
-		RepositoryName:      aws.String(*dspec.Name),
-		RegistryId:          aws.String(*dspec.RegistryID),
-		LifecyclePolicyText: aws.String(*dspec.LifecyclePolicy),
+		RepositoryName:      dspec.Name,
+		RegistryId:          dspec.RegistryID,
+		LifecyclePolicyText: dspec.LifecyclePolicy,
 	}
 
 	_, err = rm.sdkapi.PutLifecyclePolicyWithContext(ctx, input)
@@ -188,8 +194,8 @@ func (rm *resourceManager) deleteLifecyclePolicy(
 
 	dspec := desired.ko.Spec
 	input := &svcsdk.DeleteLifecyclePolicyInput{
-		RepositoryName: aws.String(*dspec.Name),
-		RegistryId:     aws.String(*dspec.RegistryID),
+		RepositoryName: dspec.Name,
+		RegistryId:     dspec.RegistryID,
 	}
 
 	_, err = rm.sdkapi.DeleteLifecyclePolicyWithContext(ctx, input)
@@ -243,4 +249,58 @@ func (rm *resourceManager) syncRepositoryTags(
 		}
 	}
 	return nil
+}
+
+// updateRepositoryPolicy updates the policy of a repository
+func (rm *resourceManager) updateRepositoryPolicy(
+	ctx context.Context,
+	desired *resource,
+) (*resource, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.updateRepositoryPolicy")
+	defer exit(err)
+
+	dspec := desired.ko.Spec
+
+	if dspec.Policy == nil || *dspec.Policy == "" {
+		return rm.deleteRepositoryPolicy(ctx, desired)
+	}
+
+	input := &svcsdk.SetRepositoryPolicyInput{
+		RepositoryName: dspec.Name,
+		RegistryId:     dspec.RegistryID,
+		PolicyText:     dspec.Policy,
+	}
+
+	_, err = rm.sdkapi.SetRepositoryPolicyWithContext(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "SetRepositoryPolicy", err)
+	if err != nil {
+		return nil, err
+	}
+	return desired, nil
+}
+
+// deleteRepositoryPolicy deletes a repository policy
+func (rm *resourceManager) deleteRepositoryPolicy(
+	ctx context.Context,
+	desired *resource,
+) (*resource, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteRepositoryPolicy")
+	defer exit(err)
+
+	dspec := desired.ko.Spec
+	input := &svcsdk.DeleteRepositoryPolicyInput{
+		RepositoryName: dspec.Name,
+		RegistryId:     dspec.RegistryID,
+	}
+
+	_, err = rm.sdkapi.DeleteRepositoryPolicyWithContext(ctx, input)
+	rm.metrics.RecordAPICall("DELETE", "DeleteRepositoryPolicy", err)
+	if err != nil {
+		return nil, err
+	}
+	return desired, nil
 }

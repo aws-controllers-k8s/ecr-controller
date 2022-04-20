@@ -11,6 +11,10 @@ resources:
         from:
           operation: PutLifecyclePolicy
           path: LifecyclePolicyText
+      Policy:
+        from:
+          operation: SetRepositoryPolicy
+          path: PolicyText
       Tags:
         compare:
           is_ignored: true

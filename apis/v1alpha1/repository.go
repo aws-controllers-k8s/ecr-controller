@@ -42,6 +42,10 @@ type RepositorySpec struct {
 	// to group the repository into a category (such as project-a/nginx-web-app).
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
+	// The JSON repository policy text to apply to the repository. For more information,
+	// see Amazon ECR repository policies (https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-policy-examples.html)
+	// in the Amazon Elastic Container Registry User Guide.
+	Policy *string `json:"policy,omitempty"`
 	// The AWS account ID associated with the registry to create the repository.
 	// If you do not specify a registry, the default registry is assumed.
 	RegistryID *string `json:"registryID,omitempty"`

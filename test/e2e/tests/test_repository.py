@@ -15,6 +15,7 @@
 """
 
 import boto3
+import json
 import pytest
 import time
 import logging
@@ -34,6 +35,11 @@ DELETE_WAIT_AFTER_SECONDS = 10
 
 LIFECYCLE_POLICY_FILTERING_ON_IMAGE_AGE = '{"rules":[{"rulePriority":1,"description":"Expire images older than 14 days","selection":'\
     '{"tagStatus":"untagged","countType":"sinceImagePushed","countUnit":"days","countNumber":14},"action":{"type":"expire"}}]}'
+
+REPOSITORY_POLICY_GET_DOWNLOAD_URL_ALL = '{"Version":"2012-10-17","Statement":[{"Sid":"AllowPull","Effect":"Allow","Principal":"*","Action":"ecr:GetDownloadUrlForLayer"}]}'
+
+def minify_json_string(json_string: str) -> str:
+    return json_string.replace("\n", "").replace(" ", "")
 
 @pytest.fixture(scope="module")
 def ecr_client():
@@ -59,6 +65,17 @@ class TestRepository:
                 return repository
 
         return None
+
+    def get_repository_policy(self, ecr_client, repository_name: str, registry_id: str) -> str:
+        try:
+            resp = ecr_client.get_repository_policy(
+                repositoryName=repository_name,
+                registryId=registry_id,
+            )
+            return resp['policyText']
+        except Exception as e:
+            logging.debug(e)
+            return ""
 
     def get_lifecycle_policy(self, ecr_client, repository_name: str, registry_id: str) -> str:
         try:
@@ -108,6 +125,9 @@ class TestRepository:
         assert k8s.get_resource_exists(ref)
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Get latest repository CR
+        cr = k8s.wait_resource_consumed_by_controller(ref)
 
         # Check ECR repository exists
         exists = self.repository_exists(ecr_client, resource_name)
@@ -159,6 +179,9 @@ class TestRepository:
         assert k8s.get_resource_exists(ref)
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Get latest repository CR
+        cr = k8s.wait_resource_consumed_by_controller(ref)
 
         # Check ECR repository exists
         repo = self.get_repository(ecr_client, resource_name)
@@ -280,6 +303,64 @@ class TestRepository:
         assert len(repository_tags) == len(tags[:-1])
         assert repository_tags[0]['Key'] == tags[0]['key']
         assert repository_tags[0]['Value'] == tags[0]['value']
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check ECR repository doesn't exists
+        exists = self.repository_exists(ecr_client, resource_name)
+        assert not exists
+
+    def test_repository_policy(self, ecr_client):
+        resource_name = random_suffix_name("ecr-repository", 24)
+
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["REPOSITORY_NAME"] = resource_name
+        replacements["REPOSITORY_POLICY"] = REPOSITORY_POLICY_GET_DOWNLOAD_URL_ALL
+
+        # Load Repository CR
+        resource_data = load_ecr_resource(
+            "repository_policy",
+            additional_replacements=replacements,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Get latest repository CR
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        # Check ECR repository exists
+        repo = self.get_repository(ecr_client, resource_name)
+        assert repo is not None
+
+        # Check ECR repository policy exists
+        policy = self.get_repository_policy(ecr_client, resource_name, repo["registryId"])
+        assert minify_json_string(policy) == REPOSITORY_POLICY_GET_DOWNLOAD_URL_ALL
+
+        # Remove repository policy
+        cr["spec"]["policy"] = ""
+
+        # Patch k8s resource
+        k8s.patch_custom_resource(ref, cr)
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+
+        policy = self.get_repository_policy(ecr_client, resource_name, repo["registryId"])
+        assert policy == ""
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
