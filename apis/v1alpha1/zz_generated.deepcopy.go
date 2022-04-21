@@ -267,6 +267,11 @@ func (in *RepositorySpec) DeepCopyInto(out *RepositorySpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Policy != nil {
+		in, out := &in.Policy, &out.Policy
+		*out = new(string)
+		**out = **in
+	}
 	if in.RegistryID != nil {
 		in, out := &in.RegistryID, &out.RegistryID
 		*out = new(string)

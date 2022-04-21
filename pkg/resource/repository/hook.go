@@ -9,7 +9,6 @@ import (
 	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
 	svcsdk "github.com/aws/aws-sdk-go/service/ecr"
 
-	"github.com/aws-controllers-k8s/ecr-controller/apis/v1alpha1"
 	svcapitypes "github.com/aws-controllers-k8s/ecr-controller/apis/v1alpha1"
 )
 
@@ -23,27 +22,18 @@ func (rm *resourceManager) setResourceAdditionalFields(
 	exit := rlog.Trace("rm.setResourceAdditionalFields")
 	defer exit(err)
 
-	var getLifecyclePolicyResponse *svcsdk.GetLifecyclePolicyOutput
-	getLifecyclePolicyResponse, err = rm.sdkapi.GetLifecyclePolicyWithContext(
-		ctx,
-		&svcsdk.GetLifecyclePolicyInput{
-			RepositoryName: ko.Spec.Name,
-			RegistryId:     ko.Spec.RegistryID,
-		},
-	)
-	rm.metrics.RecordAPICall("GET", "GetLifecyclePolicy", err)
+	// Set repository policy
+	ko.Spec.Policy, err = rm.getRepositoryPolicy(ctx, *ko.Spec.Name, *ko.Spec.RegistryID)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.Code() != svcsdk.ErrCodeLifecyclePolicyNotFoundException {
-			return err
-		}
-		ko.Spec.LifecyclePolicy = nil
+		return err
 	}
-	if getLifecyclePolicyResponse.LifecyclePolicyText != nil {
-		ko.Spec.LifecyclePolicy = getLifecyclePolicyResponse.LifecyclePolicyText
+	// Set repository lifecycle policy
+	ko.Spec.LifecyclePolicy, err = rm.getRepositoryLifecyclePolicy(ctx, *ko.Spec.Name, *ko.Spec.RegistryID)
+	if err != nil {
+		return err
 	}
-
+	// Set repository tags
 	ko.Spec.Tags, err = rm.getRepositoryTags(ctx, string(*ko.Status.ACKResourceMetadata.ARN))
-	rm.metrics.RecordAPICall("GET", "ListTagsForResource", err)
 	if err != nil {
 		return err
 	}
@@ -51,7 +41,68 @@ func (rm *resourceManager) setResourceAdditionalFields(
 	return nil
 }
 
-func (rm *resourceManager) getRepositoryTags(ctx context.Context, resourceARN string) ([]*v1alpha1.Tag, error) {
+// getRepositoryPolicy retrieves a repository permissions policy.
+func (rm *resourceManager) getRepositoryPolicy(
+	ctx context.Context,
+	repositoryName,
+	registryID string,
+) (*string, error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.getRepositoryPolicy")
+	var err error
+	defer exit(err)
+
+	var getRepositoryPolicyResponse *svcsdk.GetRepositoryPolicyOutput
+	getRepositoryPolicyResponse, err = rm.sdkapi.GetRepositoryPolicyWithContext(
+		ctx,
+		&svcsdk.GetRepositoryPolicyInput{
+			RepositoryName: &repositoryName,
+			RegistryId:     &registryID,
+		},
+	)
+	rm.metrics.RecordAPICall("GET", "GetRepositoryPolicy", err)
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.Code() != svcsdk.ErrCodeRepositoryPolicyNotFoundException {
+			return nil, err
+		}
+		// do not return an error if the repository policy is not found. Simply return an empty policy.
+		return nil, nil
+	}
+	return getRepositoryPolicyResponse.PolicyText, nil
+}
+
+// getRepositoryLifecyclePolicy retrieves a repository lifecycle policy.
+func (rm *resourceManager) getRepositoryLifecyclePolicy(
+	ctx context.Context,
+	repositoryName,
+	registryID string,
+) (*string, error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.getRepositoryLifecyclePolicy")
+	var err error
+	defer exit(err)
+
+	var getLifecyclePolicyResponse *svcsdk.GetLifecyclePolicyOutput
+	getLifecyclePolicyResponse, err = rm.sdkapi.GetLifecyclePolicyWithContext(
+		ctx,
+		&svcsdk.GetLifecyclePolicyInput{
+			RepositoryName: &repositoryName,
+			RegistryId:     &registryID,
+		},
+	)
+	rm.metrics.RecordAPICall("GET", "GetLifecyclePolicy", err)
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); !ok || awsErr.Code() != svcsdk.ErrCodeLifecyclePolicyNotFoundException {
+			return nil, err
+		}
+		// do not return an error if the lifecycle policy is not found. Simply return an empty lifecycle policy.
+		return nil, nil
+	}
+	return getLifecyclePolicyResponse.LifecyclePolicyText, nil
+}
+
+// getRepositoryTags retrieves a resource list of tags.
+func (rm *resourceManager) getRepositoryTags(ctx context.Context, resourceARN string) ([]*svcapitypes.Tag, error) {
 	listTagsForResourceResponse, err := rm.sdkapi.ListTagsForResourceWithContext(
 		ctx,
 		&svcsdk.ListTagsForResourceInput{
@@ -62,9 +113,9 @@ func (rm *resourceManager) getRepositoryTags(ctx context.Context, resourceARN st
 	if err != nil {
 		return nil, err
 	}
-	tags := make([]*v1alpha1.Tag, 0, len(listTagsForResourceResponse.Tags))
+	tags := make([]*svcapitypes.Tag, 0, len(listTagsForResourceResponse.Tags))
 	for _, tag := range listTagsForResourceResponse.Tags {
-		tags = append(tags, &v1alpha1.Tag{
+		tags = append(tags, &svcapitypes.Tag{
 			Key:   tag.Key,
 			Value: tag.Value,
 		})
@@ -89,8 +140,8 @@ func customPreCompare(
 // equalTags returns true if two Tag arrays are equal regardless of the order
 // of their elements.
 func equalTags(
-	a []*v1alpha1.Tag,
-	b []*v1alpha1.Tag,
+	a []*svcapitypes.Tag,
+	b []*svcapitypes.Tag,
 ) bool {
 	added, updated, removed := computeTagsDelta(a, b)
 	return len(added) == 0 && len(updated) == 0 && len(removed) == 0
@@ -100,9 +151,9 @@ func equalTags(
 // containing the added, updated and removed tags.
 // The removed tags only contains the Key of tags
 func computeTagsDelta(
-	a []*v1alpha1.Tag,
-	b []*v1alpha1.Tag,
-) (added, updated []*v1alpha1.Tag, removed []*string) {
+	a []*svcapitypes.Tag,
+	b []*svcapitypes.Tag,
+) (added, updated []*svcapitypes.Tag, removed []*string) {
 	var visitedIndexes []string
 mainLoop:
 	for _, aElement := range a {
@@ -125,8 +176,8 @@ mainLoop:
 	return added, updated, removed
 }
 
-// svcTagsFromResourceTags transforms a *v1alpha1.Tag array to a *svcsdk.Tag array.
-func sdkTagsFromResourceTags(rTags []*v1alpha1.Tag) []*svcsdk.Tag {
+// svcTagsFromResourceTags transforms a *svcapitypes.Tag array to a *svcsdk.Tag array.
+func sdkTagsFromResourceTags(rTags []*svcapitypes.Tag) []*svcsdk.Tag {
 	tags := make([]*svcsdk.Tag, len(rTags))
 	for i := range rTags {
 		tags[i] = &svcsdk.Tag{
