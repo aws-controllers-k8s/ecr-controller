@@ -81,6 +81,8 @@ type RepositoryStatus struct {
 // Repository is the Schema for the Repositories API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="REGISTRY-ID",type=string,priority=0,JSONPath=`.spec.registryID`
+// +kubebuilder:printcolumn:name="IMAGE-TAG-MUTABILITY",type=string,priority=0,JSONPath=`.spec.imageTagMutability`
 type Repository struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
