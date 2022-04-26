@@ -1,5 +1,7 @@
 resources:
   Repository:
+    print:
+      order_by: index
     fields:
       Name:
         is_primary_key: true
@@ -20,6 +22,13 @@ resources:
           is_ignored: true
       RegistryID:
         late_initialize: {}
+        print:
+          name: REGISTRY-ID
+          index: 0
+      ImageTagMutability:
+        print:
+          name: IMAGE-TAG-MUTABILITY
+          index: 1
     renames:
       operations:
         CreateRepository:

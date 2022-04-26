@@ -16,7 +16,14 @@ spec:
     singular: repository
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.registryID
+      name: REGISTRY-ID
+      type: string
+    - jsonPath: .spec.imageTagMutability
+      name: IMAGE-TAG-MUTABILITY
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Repository is the Schema for the Repositories API
