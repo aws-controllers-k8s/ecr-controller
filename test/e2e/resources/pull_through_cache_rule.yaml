@@ -1,0 +1,8 @@
+apiVersion: ecr.services.k8s.aws/v1alpha1
+kind: PullThroughCacheRule
+metadata:
+  name: $NAME
+spec:
+  registryID: "$REGISTRY_ID"
+  ecrRepositoryPrefix: $ECR_REPOSITORY_PREFIX
+  upstreamRegistryURL: $UPSTREAM_REGISTRY_URL

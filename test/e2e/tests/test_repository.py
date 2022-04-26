@@ -14,8 +14,6 @@
 """Integration tests for the ECR Repository API.
 """
 
-import boto3
-import json
 import pytest
 import time
 import logging
@@ -25,7 +23,6 @@ from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ecr_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
-from e2e.bootstrap_resources import TestBootstrapResources, get_bootstrap_resources
 
 RESOURCE_PLURAL = "repositories"
 
@@ -40,10 +37,6 @@ REPOSITORY_POLICY_GET_DOWNLOAD_URL_ALL = '{"Version":"2012-10-17","Statement":[{
 
 def minify_json_string(json_string: str) -> str:
     return json_string.replace("\n", "").replace(" ", "")
-
-@pytest.fixture(scope="module")
-def ecr_client():
-    return boto3.client("ecr")
 
 @service_marker
 @pytest.mark.canary

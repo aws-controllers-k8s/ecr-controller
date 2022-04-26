@@ -46,8 +46,9 @@ type RepositorySpec struct {
 	// see Amazon ECR repository policies (https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-policy-examples.html)
 	// in the Amazon Elastic Container Registry User Guide.
 	Policy *string `json:"policy,omitempty"`
-	// The AWS account ID associated with the registry to create the repository.
-	// If you do not specify a registry, the default registry is assumed.
+	// The Amazon Web Services account ID associated with the registry to create
+	// the repository. If you do not specify a registry, the default registry is
+	// assumed.
 	RegistryID *string `json:"registryID,omitempty"`
 	// The metadata that you apply to the repository to help you categorize and
 	// organize them. Each tag consists of a key and an optional value, both of

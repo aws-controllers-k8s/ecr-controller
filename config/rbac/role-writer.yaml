@@ -9,6 +9,7 @@ rules:
 - apiGroups:
   - ecr.services.k8s.aws
   resources:
+  - pullthroughcacherules
   - repositories
   verbs:
   - create
@@ -21,6 +22,7 @@ rules:
 - apiGroups:
   - ecr.services.k8s.aws
   resources:
+  - pullthroughcacherules
   - repositories
   verbs:
   - get

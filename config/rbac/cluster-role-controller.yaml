@@ -35,6 +35,26 @@ rules:
 - apiGroups:
   - ecr.services.k8s.aws
   resources:
+  - pullthroughcacherules
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ecr.services.k8s.aws
+  resources:
+  - pullthroughcacherules/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ecr.services.k8s.aws
+  resources:
   - repositories
   verbs:
   - create
