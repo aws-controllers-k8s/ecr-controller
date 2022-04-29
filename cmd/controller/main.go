@@ -33,6 +33,7 @@ import (
 	svctypes "github.com/aws-controllers-k8s/ecr-controller/apis/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/ecr-controller/pkg/resource"
 
+	_ "github.com/aws-controllers-k8s/ecr-controller/pkg/resource/pull_through_cache_rule"
 	_ "github.com/aws-controllers-k8s/ecr-controller/pkg/resource/repository"
 
 	"github.com/aws-controllers-k8s/ecr-controller/pkg/version"

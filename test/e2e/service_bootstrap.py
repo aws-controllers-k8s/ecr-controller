@@ -13,21 +13,18 @@
 """Bootstraps the resources required to run the ECR integration tests.
 """
 
-import boto3
 import logging
 from time import sleep
 
-from acktest import resources
-from acktest.aws.identity import get_region, get_account_id
 from e2e import bootstrap_directory
-from e2e.bootstrap_resources import TestBootstrapResources
+from e2e.bootstrap_resources import BootstrapResources
 
 def service_bootstrap() -> dict:
     logging.getLogger().setLevel(logging.INFO)
 
-    return TestBootstrapResources().__dict__
+    resources = BootstrapResources()
+    return resources
 
 if __name__ == "__main__":
     config = service_bootstrap()
-    # Write config to current directory by default
-    resources.write_bootstrap_config(config, bootstrap_directory)
+    config.serialize(bootstrap_directory)
