@@ -19,6 +19,7 @@ import time
 import logging
 from typing import Dict, Tuple
 
+from acktest import tags as tagutil
 from acktest.resources import random_suffix_name
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ecr_resource
@@ -252,7 +253,7 @@ class TestRepository:
         k8s.patch_custom_resource(ref, cr)
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
-        repository_tags = self.get_resource_tags(ecr_client, cr["status"]["ackResourceMetadata"]["arn"])
+        repository_tags = tagutil.clean(self.get_resource_tags(ecr_client, cr["status"]["ackResourceMetadata"]["arn"]))
         assert len(repository_tags) == len(tags)
         assert repository_tags[0]['Key'] == tags[0]['key']
         assert repository_tags[0]['Value'] == tags[0]['value']
@@ -278,7 +279,7 @@ class TestRepository:
 
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
-        repository_tags = self.get_resource_tags(ecr_client, cr["status"]["ackResourceMetadata"]["arn"])
+        repository_tags = tagutil.clean(self.get_resource_tags(ecr_client, cr["status"]["ackResourceMetadata"]["arn"]))
         assert len(repository_tags) == len(tags)
         assert repository_tags[0]['Key'] == tags[0]['key']
         assert repository_tags[0]['Value'] == tags[0]['value']
@@ -292,7 +293,7 @@ class TestRepository:
         k8s.patch_custom_resource(ref, cr)
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
-        repository_tags = self.get_resource_tags(ecr_client, cr["status"]["ackResourceMetadata"]["arn"])
+        repository_tags = tagutil.clean(self.get_resource_tags(ecr_client, cr["status"]["ackResourceMetadata"]["arn"]))
         assert len(repository_tags) == len(tags[:-1])
         assert repository_tags[0]['Key'] == tags[0]['key']
         assert repository_tags[0]['Value'] == tags[0]['value']
