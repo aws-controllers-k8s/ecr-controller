@@ -74,3 +74,5 @@ resources:
       match_fields:
         - RegistryId
         - EcrRepositoryPrefix
+    tags:
+      ignore: true

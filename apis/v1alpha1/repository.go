@@ -84,6 +84,7 @@ type RepositoryStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="REGISTRY-ID",type=string,priority=0,JSONPath=`.spec.registryID`
 // +kubebuilder:printcolumn:name="IMAGE-TAG-MUTABILITY",type=string,priority=0,JSONPath=`.spec.imageTagMutability`
+// +kubebuilder:printcolumn:name="Synced",type="boolean",priority=0,JSONPath=".status.conditions[?(@.type==\"ACK.ResourceSynced\")].status"
 type Repository struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

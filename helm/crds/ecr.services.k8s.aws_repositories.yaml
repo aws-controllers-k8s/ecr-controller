@@ -23,6 +23,9 @@ spec:
     - jsonPath: .spec.imageTagMutability
       name: IMAGE-TAG-MUTABILITY
       type: string
+    - jsonPath: .status.conditions[?(@.type=="ACK.ResourceSynced")].status
+      name: Synced
+      type: boolean
     name: v1alpha1
     schema:
       openAPIV3Schema:
