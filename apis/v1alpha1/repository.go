@@ -24,6 +24,7 @@ import (
 //
 // An object representing a repository.
 type RepositorySpec struct {
+
 	// The encryption configuration for the repository. This determines how the
 	// contents of your repository are encrypted at rest.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`

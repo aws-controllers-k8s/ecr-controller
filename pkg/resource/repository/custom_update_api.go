@@ -34,13 +34,13 @@ var (
 // resource updates. The ECR API has 4 separate API calls to update a
 // Repository, depending on the Repository attribute that has changed:
 //
-// * PutImageScanningConfiguration for when the
-//   Repository.imageScanningConfiguration struct changed
-// * PutImageTagMutability for when the Repository.imageTagMutability attribute
-//   changed
-// * PutLifecyclePolicy for when the Repository.lifecyclePolicy changed
-// * SetRepositoryPolicy for when the Repository.policy changed (yes, it uses
-//   "Set" and not "Put"... no idea why this is inconsistent)
+//   - PutImageScanningConfiguration for when the
+//     Repository.imageScanningConfiguration struct changed
+//   - PutImageTagMutability for when the Repository.imageTagMutability attribute
+//     changed
+//   - PutLifecyclePolicy for when the Repository.lifecyclePolicy changed
+//   - SetRepositoryPolicy for when the Repository.policy changed (yes, it uses
+//     "Set" and not "Put"... no idea why this is inconsistent)
 func (rm *resourceManager) customUpdateRepository(
 	ctx context.Context,
 	desired *resource,
