@@ -24,6 +24,7 @@ import (
 //
 // The details of a pull through cache rule.
 type PullThroughCacheRuleSpec struct {
+
 	// The repository name prefix to use when caching images from the source registry.
 	// +kubebuilder:validation:Required
 	ECRRepositoryPrefix *string `json:"ecrRepositoryPrefix"`
