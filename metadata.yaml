@@ -2,7 +2,7 @@ service:
   full_name: "Amazon Elastic Container Registry"
   short_name: "ECR"
   link: "https://aws.amazon.com/ecr/"
-  documentation: "https://docs.aws.amazon.com/AmazonECR/latest/userguide/index.html"
+  documentation: "https://docs.aws.amazon.com/AmazonECR/latest/userguide/what-is-ecr.html"
 api_versions:
   - api_version: v1alpha1
     status: available
