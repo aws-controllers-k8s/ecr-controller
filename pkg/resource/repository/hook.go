@@ -2,15 +2,48 @@ package repository
 
 import (
 	"context"
+	"strconv"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
 	svcsdk "github.com/aws/aws-sdk-go/service/ecr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	svcapitypes "github.com/aws-controllers-k8s/ecr-controller/apis/v1alpha1"
 )
+
+const (
+	// AnnotationPrefix is the prefix for all annotations specifically for
+	// the ECR service.
+	AnnotationPrefix = "ecr.services.k8s.aws/"
+	// AnnotationDeleteForce is an annotation whose value indicates whether
+	// the repository should be removed if it contains images.
+	AnnotationDeleteForce = AnnotationPrefix + "force-delete"
+
+	DefaultDeleteForce = false
+)
+
+// GetDeleteForce returns whether the repository should be deleted if it
+// contains images as determined by the annotation on the object, or the
+// default value otherwise.
+func GetDeleteForce(
+	m *metav1.ObjectMeta,
+) bool {
+	resAnnotations := m.GetAnnotations()
+	deleteForce, ok := resAnnotations[AnnotationDeleteForce]
+	if !ok {
+		return DefaultDeleteForce
+	}
+
+	deleteForceBool, err := strconv.ParseBool(deleteForce)
+	if err != nil {
+		return DefaultDeleteForce
+	}
+
+	return deleteForceBool
+}
 
 // setResourceAdditionalFields will describe the fields that are not return by
 // DescribeRepository calls

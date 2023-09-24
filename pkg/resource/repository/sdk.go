@@ -352,6 +352,7 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
+	input.SetForce(GetDeleteForce(&r.ko.ObjectMeta))
 	var resp *svcsdk.DeleteRepositoryOutput
 	_ = resp
 	resp, err = rm.sdkapi.DeleteRepositoryWithContext(ctx, input)
