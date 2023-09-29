@@ -21,6 +21,7 @@ from typing import Dict, Tuple
 
 from acktest import tags as tagutil
 from acktest.resources import random_suffix_name
+from acktest.aws.identity import get_region, get_account_id
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ecr_resource
 from e2e.replacement_values import REPLACEMENT_VALUES
@@ -355,6 +356,59 @@ class TestRepository:
 
         policy = self.get_repository_policy(ecr_client, resource_name, repo["registryId"])
         assert policy == ""
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check ECR repository doesn't exists
+        exists = self.repository_exists(ecr_client, resource_name)
+        assert not exists
+
+    def test_repository_create_will_all_fields(self, ecr_client):
+        resource_name = random_suffix_name("ecr-repository", 24)
+
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["REPOSITORY_NAME"] = resource_name
+        replacements["REPOSITORY_POLICY"] = REPOSITORY_POLICY_GET_DOWNLOAD_URL_ALL
+        replacements["REPOSITORY_LIFECYCLE_POLICY"] = LIFECYCLE_POLICY_FILTERING_ON_IMAGE_AGE
+        replacements["REGISTRY_ID"] = get_account_id()
+
+        # Load Repository CR
+        resource_data = load_ecr_resource(
+            "repository_all_fields",
+            additional_replacements=replacements,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Get latest repository CR
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        # Check ECR repository exists
+        repo = self.get_repository(ecr_client, resource_name)
+        assert repo is not None
+
+        # Check ECR repository policy exists
+        policy = self.get_repository_policy(ecr_client, resource_name, repo["registryId"])
+        assert minify_json_string(policy) == REPOSITORY_POLICY_GET_DOWNLOAD_URL_ALL
+        # Check ECR repository lifecycle policy exists
+        lifecycle_policy = self.get_lifecycle_policy(ecr_client, resource_name, repo["registryId"])
+        assert lifecycle_policy == LIFECYCLE_POLICY_FILTERING_ON_IMAGE_AGE
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)
