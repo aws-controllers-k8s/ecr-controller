@@ -8,7 +8,7 @@ roleRef:
   name: ack-namespaces-cache-ecr-controller
 subjects:
 - kind: ServiceAccount
-  name: ack-ecr-controller
+  name: {{ include "ack-ecr-controller.service-account.name" . }}
   namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -22,5 +22,5 @@ roleRef:
   name: ack-configmaps-cache-ecr-controller
 subjects:
 - kind: ServiceAccount
-  name: ack-ecr-controller
+  name: {{ include "ack-ecr-controller.service-account.name" . }}
   namespace: {{ .Release.Namespace }}
