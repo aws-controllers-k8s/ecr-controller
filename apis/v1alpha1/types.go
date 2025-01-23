@@ -39,7 +39,7 @@ type AWSECRContainerImageDetails struct {
 //
 // By default, when no encryption configuration is set or the AES256 encryption
 // type is used, Amazon ECR uses server-side encryption with Amazon S3-managed
-// encryption keys which encrypts your data at rest using an AES-256 encryption
+// encryption keys which encrypts your data at rest using an AES256 encryption
 // algorithm. This does not require any action on your part.
 //
 // For more control over the encryption of the contents of your repository,
@@ -50,6 +50,11 @@ type AWSECRContainerImageDetails struct {
 type EncryptionConfiguration struct {
 	EncryptionType *string `json:"encryptionType,omitempty"`
 	KMSKey         *string `json:"kmsKey,omitempty"`
+}
+
+// The encryption configuration to associate with the repository creation template.
+type EncryptionConfigurationForRepositoryCreationTemplate struct {
+	EncryptionType *string `json:"encryptionType,omitempty"`
 }
 
 // The details of an enhanced image scan. This is returned when enhanced scanning
@@ -93,8 +98,11 @@ type PackageVulnerabilityDetails struct {
 // The details of a pull through cache rule.
 type PullThroughCacheRule_SDK struct {
 	CreatedAt           *metav1.Time `json:"createdAt,omitempty"`
+	CredentialARN       *string      `json:"credentialARN,omitempty"`
 	ECRRepositoryPrefix *string      `json:"ecrRepositoryPrefix,omitempty"`
 	RegistryID          *string      `json:"registryID,omitempty"`
+	UpdatedAt           *metav1.Time `json:"updatedAt,omitempty"`
+	UpstreamRegistry    *string      `json:"upstreamRegistry,omitempty"`
 	UpstreamRegistryURL *string      `json:"upstreamRegistryURL,omitempty"`
 }
 
@@ -106,6 +114,13 @@ type Recommendation struct {
 // An array of objects representing the destination for a replication rule.
 type ReplicationDestination struct {
 	RegistryID *string `json:"registryID,omitempty"`
+}
+
+// The details of the repository creation template associated with the request.
+type RepositoryCreationTemplate struct {
+	ImageTagMutability *string `json:"imageTagMutability,omitempty"`
+	RepositoryPolicy   *string `json:"repositoryPolicy,omitempty"`
+	ResourceTags       []*Tag  `json:"resourceTags,omitempty"`
 }
 
 // The details of the scanning configuration for a repository.
@@ -129,7 +144,7 @@ type Repository_SDK struct {
 	//
 	// By default, when no encryption configuration is set or the AES256 encryption
 	// type is used, Amazon ECR uses server-side encryption with Amazon S3-managed
-	// encryption keys which encrypts your data at rest using an AES-256 encryption
+	// encryption keys which encrypts your data at rest using an AES256 encryption
 	// algorithm. This does not require any action on your part.
 	//
 	// For more control over the encryption of the contents of your repository,

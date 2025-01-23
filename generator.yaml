@@ -80,3 +80,11 @@ resources:
         - EcrRepositoryPrefix
     tags:
       ignore: true
+ignore:
+  resource_names:
+  - RepositoryCreationTemplate
+  field_paths:
+  - CreatePullThroughCacheRuleOutput.CredentialArn
+  - CreatePullThroughCacheRuleOutput.UpstreamRegistry
+  - CreatePullThroughCacheRuleInput.UpstreamRegistry
+  - CreatePullThroughCacheRuleInput.CredentialArn
