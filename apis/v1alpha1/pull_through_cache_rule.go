@@ -33,7 +33,21 @@ type PullThroughCacheRuleSpec struct {
 	// registry is assumed.
 	RegistryID *string `json:"registryID,omitempty"`
 	// The registry URL of the upstream public registry to use as the source for
-	// the pull through cache rule.
+	// the pull through cache rule. The following is the syntax to use for each
+	// supported upstream registry.
+	//
+	//   - Amazon ECR Public (ecr-public) - public.ecr.aws
+	//
+	//   - Docker Hub (docker-hub) - registry-1.docker.io
+	//
+	//   - Quay (quay) - quay.io
+	//
+	//   - Kubernetes (k8s) - registry.k8s.io
+	//
+	//   - GitHub Container Registry (github-container-registry) - ghcr.io
+	//
+	//   - Microsoft Azure Container Registry (azure-container-registry) - .azurecr.io
+	//
 	// +kubebuilder:validation:Required
 	UpstreamRegistryURL *string `json:"upstreamRegistryURL"`
 }
