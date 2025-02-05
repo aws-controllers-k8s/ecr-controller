@@ -28,8 +28,9 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/ecr"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +41,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.ECR{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.PullThroughCacheRule{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +49,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -73,13 +74,14 @@ func (rm *resourceManager) sdkFind(
 		return nil, err
 	}
 	if r.ko.Spec.ECRRepositoryPrefix != nil {
-		input.EcrRepositoryPrefixes = []*string{r.ko.Spec.ECRRepositoryPrefix}
+		input.EcrRepositoryPrefixes = []string{*r.ko.Spec.ECRRepositoryPrefix}
 	}
 	var resp *svcsdk.DescribePullThroughCacheRulesOutput
-	resp, err = rm.sdkapi.DescribePullThroughCacheRulesWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribePullThroughCacheRules(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribePullThroughCacheRules", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "PullThroughCacheRuleNotFoundException" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "PullThroughCacheRuleNotFoundException" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -149,7 +151,7 @@ func (rm *resourceManager) newListRequestPayload(
 	res := &svcsdk.DescribePullThroughCacheRulesInput{}
 
 	if r.ko.Spec.RegistryID != nil {
-		res.SetRegistryId(*r.ko.Spec.RegistryID)
+		res.RegistryId = r.ko.Spec.RegistryID
 	}
 
 	return res, nil
@@ -174,7 +176,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.CreatePullThroughCacheRuleOutput
 	_ = resp
-	resp, err = rm.sdkapi.CreatePullThroughCacheRuleWithContext(ctx, input)
+	resp, err = rm.sdkapi.CreatePullThroughCacheRule(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "CreatePullThroughCacheRule", err)
 	if err != nil {
 		return nil, err
@@ -217,13 +219,13 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.CreatePullThroughCacheRuleInput{}
 
 	if r.ko.Spec.ECRRepositoryPrefix != nil {
-		res.SetEcrRepositoryPrefix(*r.ko.Spec.ECRRepositoryPrefix)
+		res.EcrRepositoryPrefix = r.ko.Spec.ECRRepositoryPrefix
 	}
 	if r.ko.Spec.RegistryID != nil {
-		res.SetRegistryId(*r.ko.Spec.RegistryID)
+		res.RegistryId = r.ko.Spec.RegistryID
 	}
 	if r.ko.Spec.UpstreamRegistryURL != nil {
-		res.SetUpstreamRegistryUrl(*r.ko.Spec.UpstreamRegistryURL)
+		res.UpstreamRegistryUrl = r.ko.Spec.UpstreamRegistryURL
 	}
 
 	return res, nil
@@ -236,8 +238,64 @@ func (rm *resourceManager) sdkUpdate(
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
-) (*resource, error) {
-	return nil, ackerr.NewTerminalError(ackerr.NotImplemented)
+) (updated *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sdkUpdate")
+	defer func() {
+		exit(err)
+	}()
+	if immutableFieldChanges := rm.getImmutableFieldChanges(delta); len(immutableFieldChanges) > 0 {
+		msg := fmt.Sprintf("Immutable Spec fields have been modified: %s", strings.Join(immutableFieldChanges, ","))
+		return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
+	}
+	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp *svcsdk.UpdatePullThroughCacheRuleOutput
+	_ = resp
+	resp, err = rm.sdkapi.UpdatePullThroughCacheRule(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "UpdatePullThroughCacheRule", err)
+	if err != nil {
+		return nil, err
+	}
+	// Merge in the information we read from the API call above to the copy of
+	// the original Kubernetes object we passed to the function
+	ko := desired.ko.DeepCopy()
+
+	if resp.EcrRepositoryPrefix != nil {
+		ko.Spec.ECRRepositoryPrefix = resp.EcrRepositoryPrefix
+	} else {
+		ko.Spec.ECRRepositoryPrefix = nil
+	}
+	if resp.RegistryId != nil {
+		ko.Spec.RegistryID = resp.RegistryId
+	} else {
+		ko.Spec.RegistryID = nil
+	}
+
+	rm.setStatusDefaults(ko)
+	return &resource{ko}, nil
+}
+
+// newUpdateRequestPayload returns an SDK-specific struct for the HTTP request
+// payload of the Update API call for the resource
+func (rm *resourceManager) newUpdateRequestPayload(
+	ctx context.Context,
+	r *resource,
+	delta *ackcompare.Delta,
+) (*svcsdk.UpdatePullThroughCacheRuleInput, error) {
+	res := &svcsdk.UpdatePullThroughCacheRuleInput{}
+
+	if r.ko.Spec.ECRRepositoryPrefix != nil {
+		res.EcrRepositoryPrefix = r.ko.Spec.ECRRepositoryPrefix
+	}
+	if r.ko.Spec.RegistryID != nil {
+		res.RegistryId = r.ko.Spec.RegistryID
+	}
+
+	return res, nil
 }
 
 // sdkDelete deletes the supplied resource in the backend AWS service API
@@ -256,7 +314,7 @@ func (rm *resourceManager) sdkDelete(
 	}
 	var resp *svcsdk.DeletePullThroughCacheRuleOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeletePullThroughCacheRuleWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeletePullThroughCacheRule(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeletePullThroughCacheRule", err)
 	return nil, err
 }
@@ -269,10 +327,10 @@ func (rm *resourceManager) newDeleteRequestPayload(
 	res := &svcsdk.DeletePullThroughCacheRuleInput{}
 
 	if r.ko.Spec.ECRRepositoryPrefix != nil {
-		res.SetEcrRepositoryPrefix(*r.ko.Spec.ECRRepositoryPrefix)
+		res.EcrRepositoryPrefix = r.ko.Spec.ECRRepositoryPrefix
 	}
 	if r.ko.Spec.RegistryID != nil {
-		res.SetRegistryId(*r.ko.Spec.RegistryID)
+		res.RegistryId = r.ko.Spec.RegistryID
 	}
 
 	return res, nil

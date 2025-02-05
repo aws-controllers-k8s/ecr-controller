@@ -1,1 +1,1 @@
-input.SetForce(GetDeleteForce(&r.ko.ObjectMeta))
+input.Force = GetDeleteForce(&r.ko.ObjectMeta)

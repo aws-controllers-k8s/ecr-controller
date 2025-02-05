@@ -18,18 +18,19 @@ package v1alpha1
 type EncryptionType string
 
 const (
-	EncryptionType_AES256 EncryptionType = "AES256"
-	EncryptionType_KMS    EncryptionType = "KMS"
+	EncryptionType_AES256   EncryptionType = "AES256"
+	EncryptionType_KMS      EncryptionType = "KMS"
+	EncryptionType_KMS_DSSE EncryptionType = "KMS_DSSE"
 )
 
 type FindingSeverity string
 
 const (
+	FindingSeverity_CRITICAL      FindingSeverity = "CRITICAL"
+	FindingSeverity_HIGH          FindingSeverity = "HIGH"
 	FindingSeverity_INFORMATIONAL FindingSeverity = "INFORMATIONAL"
 	FindingSeverity_LOW           FindingSeverity = "LOW"
 	FindingSeverity_MEDIUM        FindingSeverity = "MEDIUM"
-	FindingSeverity_HIGH          FindingSeverity = "HIGH"
-	FindingSeverity_CRITICAL      FindingSeverity = "CRITICAL"
 	FindingSeverity_UNDEFINED     FindingSeverity = "UNDEFINED"
 )
 
@@ -42,20 +43,23 @@ const (
 type ImageFailureCode string
 
 const (
+	ImageFailureCode_ImageNotFound                 ImageFailureCode = "ImageNotFound"
+	ImageFailureCode_ImageReferencedByManifestList ImageFailureCode = "ImageReferencedByManifestList"
+	ImageFailureCode_ImageTagDoesNotMatchDigest    ImageFailureCode = "ImageTagDoesNotMatchDigest"
 	ImageFailureCode_InvalidImageDigest            ImageFailureCode = "InvalidImageDigest"
 	ImageFailureCode_InvalidImageTag               ImageFailureCode = "InvalidImageTag"
-	ImageFailureCode_ImageTagDoesNotMatchDigest    ImageFailureCode = "ImageTagDoesNotMatchDigest"
-	ImageFailureCode_ImageNotFound                 ImageFailureCode = "ImageNotFound"
-	ImageFailureCode_MissingDigestAndTag           ImageFailureCode = "MissingDigestAndTag"
-	ImageFailureCode_ImageReferencedByManifestList ImageFailureCode = "ImageReferencedByManifestList"
 	ImageFailureCode_KmsError                      ImageFailureCode = "KmsError"
+	ImageFailureCode_MissingDigestAndTag           ImageFailureCode = "MissingDigestAndTag"
+	ImageFailureCode_UpstreamAccessDenied          ImageFailureCode = "UpstreamAccessDenied"
+	ImageFailureCode_UpstreamTooManyRequests       ImageFailureCode = "UpstreamTooManyRequests"
+	ImageFailureCode_UpstreamUnavailable           ImageFailureCode = "UpstreamUnavailable"
 )
 
 type ImageTagMutability string
 
 const (
-	ImageTagMutability_MUTABLE   ImageTagMutability = "MUTABLE"
 	ImageTagMutability_IMMUTABLE ImageTagMutability = "IMMUTABLE"
+	ImageTagMutability_MUTABLE   ImageTagMutability = "MUTABLE"
 )
 
 type LayerAvailability string
@@ -75,18 +79,25 @@ const (
 type LifecyclePolicyPreviewStatus string
 
 const (
-	LifecyclePolicyPreviewStatus_IN_PROGRESS LifecyclePolicyPreviewStatus = "IN_PROGRESS"
 	LifecyclePolicyPreviewStatus_COMPLETE    LifecyclePolicyPreviewStatus = "COMPLETE"
 	LifecyclePolicyPreviewStatus_EXPIRED     LifecyclePolicyPreviewStatus = "EXPIRED"
 	LifecyclePolicyPreviewStatus_FAILED      LifecyclePolicyPreviewStatus = "FAILED"
+	LifecyclePolicyPreviewStatus_IN_PROGRESS LifecyclePolicyPreviewStatus = "IN_PROGRESS"
+)
+
+type RCTAppliedFor string
+
+const (
+	RCTAppliedFor_PULL_THROUGH_CACHE RCTAppliedFor = "PULL_THROUGH_CACHE"
+	RCTAppliedFor_REPLICATION        RCTAppliedFor = "REPLICATION"
 )
 
 type ReplicationStatus string
 
 const (
-	ReplicationStatus_IN_PROGRESS ReplicationStatus = "IN_PROGRESS"
 	ReplicationStatus_COMPLETE    ReplicationStatus = "COMPLETE"
 	ReplicationStatus_FAILED      ReplicationStatus = "FAILED"
+	ReplicationStatus_IN_PROGRESS ReplicationStatus = "IN_PROGRESS"
 )
 
 type RepositoryFilterType string
@@ -98,22 +109,22 @@ const (
 type ScanFrequency string
 
 const (
-	ScanFrequency_SCAN_ON_PUSH    ScanFrequency = "SCAN_ON_PUSH"
 	ScanFrequency_CONTINUOUS_SCAN ScanFrequency = "CONTINUOUS_SCAN"
 	ScanFrequency_MANUAL          ScanFrequency = "MANUAL"
+	ScanFrequency_SCAN_ON_PUSH    ScanFrequency = "SCAN_ON_PUSH"
 )
 
 type ScanStatus string
 
 const (
-	ScanStatus_IN_PROGRESS              ScanStatus = "IN_PROGRESS"
+	ScanStatus_ACTIVE                   ScanStatus = "ACTIVE"
 	ScanStatus_COMPLETE                 ScanStatus = "COMPLETE"
 	ScanStatus_FAILED                   ScanStatus = "FAILED"
-	ScanStatus_UNSUPPORTED_IMAGE        ScanStatus = "UNSUPPORTED_IMAGE"
-	ScanStatus_ACTIVE                   ScanStatus = "ACTIVE"
+	ScanStatus_FINDINGS_UNAVAILABLE     ScanStatus = "FINDINGS_UNAVAILABLE"
+	ScanStatus_IN_PROGRESS              ScanStatus = "IN_PROGRESS"
 	ScanStatus_PENDING                  ScanStatus = "PENDING"
 	ScanStatus_SCAN_ELIGIBILITY_EXPIRED ScanStatus = "SCAN_ELIGIBILITY_EXPIRED"
-	ScanStatus_FINDINGS_UNAVAILABLE     ScanStatus = "FINDINGS_UNAVAILABLE"
+	ScanStatus_UNSUPPORTED_IMAGE        ScanStatus = "UNSUPPORTED_IMAGE"
 )
 
 type ScanType string
@@ -138,7 +149,19 @@ const (
 type TagStatus string
 
 const (
+	TagStatus_ANY      TagStatus = "ANY"
 	TagStatus_TAGGED   TagStatus = "TAGGED"
 	TagStatus_UNTAGGED TagStatus = "UNTAGGED"
-	TagStatus_ANY      TagStatus = "ANY"
+)
+
+type UpstreamRegistry string
+
+const (
+	UpstreamRegistry_azure_container_registry  UpstreamRegistry = "azure-container-registry"
+	UpstreamRegistry_docker_hub                UpstreamRegistry = "docker-hub"
+	UpstreamRegistry_ecr_public                UpstreamRegistry = "ecr-public"
+	UpstreamRegistry_github_container_registry UpstreamRegistry = "github-container-registry"
+	UpstreamRegistry_gitlab_container_registry UpstreamRegistry = "gitlab-container-registry"
+	UpstreamRegistry_k8s                       UpstreamRegistry = "k8s"
+	UpstreamRegistry_quay                      UpstreamRegistry = "quay"
 )
