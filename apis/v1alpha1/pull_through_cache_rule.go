@@ -26,29 +26,37 @@ import (
 type PullThroughCacheRuleSpec struct {
 
 	// The repository name prefix to use when caching images from the source registry.
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
+
 	ECRRepositoryPrefix *string `json:"ecrRepositoryPrefix"`
 	// The Amazon Web Services account ID associated with the registry to create
 	// the pull through cache rule for. If you do not specify a registry, the default
 	// registry is assumed.
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+
 	RegistryID *string `json:"registryID,omitempty"`
 	// The registry URL of the upstream public registry to use as the source for
 	// the pull through cache rule. The following is the syntax to use for each
 	// supported upstream registry.
 	//
-	//   - Amazon ECR Public (ecr-public) - public.ecr.aws
+	//    * Amazon ECR Public (ecr-public) - public.ecr.aws
 	//
-	//   - Docker Hub (docker-hub) - registry-1.docker.io
+	//    * Docker Hub (docker-hub) - registry-1.docker.io
 	//
-	//   - Quay (quay) - quay.io
+	//    * Quay (quay) - quay.io
 	//
-	//   - Kubernetes (k8s) - registry.k8s.io
+	//    * Kubernetes (k8s) - registry.k8s.io
 	//
-	//   - GitHub Container Registry (github-container-registry) - ghcr.io
+	//    * GitHub Container Registry (github-container-registry) - ghcr.io
 	//
-	//   - Microsoft Azure Container Registry (azure-container-registry) - .azurecr.io
-	//
+	//    * Microsoft Azure Container Registry (azure-container-registry) - .azurecr.io
+
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
+
 	UpstreamRegistryURL *string `json:"upstreamRegistryURL"`
 }
 
@@ -59,7 +67,7 @@ type PullThroughCacheRuleStatus struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource
