@@ -27,20 +27,16 @@ type RepositorySpec struct {
 
 	// The encryption configuration for the repository. This determines how the
 	// contents of your repository are encrypted at rest.
-
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 	// The image scanning configuration for the repository. This determines whether
 	// images are scanned for known vulnerabilities after being pushed to the repository.
-
 	ImageScanningConfiguration *ImageScanningConfiguration `json:"imageScanningConfiguration,omitempty"`
 	// The tag mutability setting for the repository. If this parameter is omitted,
 	// the default setting of MUTABLE will be used which will allow image tags to
 	// be overwritten. If IMMUTABLE is specified, all image tags within the repository
 	// will be immutable which will prevent them from being overwritten.
-
 	ImageTagMutability *string `json:"imageTagMutability,omitempty"`
 	// The JSON repository policy text to apply to the repository.
-
 	LifecyclePolicy *string `json:"lifecyclePolicy,omitempty"`
 	// The name to use for the repository. The repository name may be specified
 	// on its own (such as nginx-web-app) or it can be prepended with a namespace
@@ -48,25 +44,20 @@ type RepositorySpec struct {
 	//
 	// The repository name must start with a letter and can only contain lowercase
 	// letters, numbers, hyphens, underscores, and forward slashes.
-
 	// +kubebuilder:validation:Required
-
 	Name *string `json:"name"`
 	// The JSON repository policy text to apply to the repository. For more information,
 	// see Amazon ECR repository policies (https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-policy-examples.html)
 	// in the Amazon Elastic Container Registry User Guide.
-
 	Policy *string `json:"policy,omitempty"`
 	// The Amazon Web Services account ID associated with the registry to create
 	// the repository. If you do not specify a registry, the default registry is
 	// assumed.
-
 	RegistryID *string `json:"registryID,omitempty"`
 	// The metadata that you apply to the repository to help you categorize and
 	// organize them. Each tag consists of a key and an optional value, both of
 	// which you define. Tag keys can have a maximum character length of 128 characters,
 	// and tag values can have a maximum length of 256 characters.
-
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
