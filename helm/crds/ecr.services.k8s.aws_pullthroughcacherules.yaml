@@ -44,8 +44,10 @@ spec:
               The details of a pull through cache rule.
             properties:
               ecrRepositoryPrefix:
-                description: The repository name prefix to use when caching images
-                  from the source registry.
+                description: |-
+                  The repository name prefix to use when caching images from the source registry.
+
+                  Regex Pattern: `^(?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*$`
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set
@@ -55,6 +57,8 @@ spec:
                   The Amazon Web Services account ID associated with the registry to create
                   the pull through cache rule for. If you do not specify a registry, the default
                   registry is assumed.
+
+                  Regex Pattern: `^[0-9]{12}$`
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set

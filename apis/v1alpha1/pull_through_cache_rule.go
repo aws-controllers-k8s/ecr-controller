@@ -26,12 +26,16 @@ import (
 type PullThroughCacheRuleSpec struct {
 
 	// The repository name prefix to use when caching images from the source registry.
+	//
+	// Regex Pattern: `^(?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	ECRRepositoryPrefix *string `json:"ecrRepositoryPrefix"`
 	// The Amazon Web Services account ID associated with the registry to create
 	// the pull through cache rule for. If you do not specify a registry, the default
 	// registry is assumed.
+	//
+	// Regex Pattern: `^[0-9]{12}$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	RegistryID *string `json:"registryID,omitempty"`
 	// The registry URL of the upstream public registry to use as the source for
