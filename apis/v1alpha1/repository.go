@@ -44,6 +44,8 @@ type RepositorySpec struct {
 	//
 	// The repository name must start with a letter and can only contain lowercase
 	// letters, numbers, hyphens, underscores, and forward slashes.
+	//
+	// Regex Pattern: `^(?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*$`
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
 	// The JSON repository policy text to apply to the repository. For more information,
@@ -53,6 +55,8 @@ type RepositorySpec struct {
 	// The Amazon Web Services account ID associated with the registry to create
 	// the repository. If you do not specify a registry, the default registry is
 	// assumed.
+	//
+	// Regex Pattern: `^[0-9]{12}$`
 	RegistryID *string `json:"registryID,omitempty"`
 	// The metadata that you apply to the repository to help you categorize and
 	// organize them. Each tag consists of a key and an optional value, both of
