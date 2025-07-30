@@ -58,6 +58,9 @@ type RepositorySpec struct {
 	//
 	// Regex Pattern: `^[0-9]{12}$`
 	RegistryID *string `json:"registryID,omitempty"`
+	// The replication configuration for the repository. This determines cross-region
+	// and cross-account replication settings.
+	ReplicationConfiguration *ReplicationConfiguration `json:"replicationConfiguration,omitempty"`
 	// The metadata that you apply to the repository to help you categorize and
 	// organize them. Each tag consists of a key and an optional value, both of
 	// which you define. Tag keys can have a maximum character length of 128 characters,

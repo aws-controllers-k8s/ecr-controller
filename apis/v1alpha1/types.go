@@ -113,7 +113,40 @@ type Recommendation struct {
 
 // An array of objects representing the destination for a replication rule.
 type ReplicationDestination struct {
+	// A Region to replicate to.
+	Region *string `json:"region,omitempty"`
+	// The Region ID of the destination registry to replicate to.
 	RegistryID *string `json:"registryID,omitempty"`
+}
+
+// The replication configuration for a registry.
+type ReplicationConfiguration struct {
+	// An array of objects representing the replication destinations and repository
+	// filters for a replication configuration.
+	Rules []*ReplicationRule `json:"rules,omitempty"`
+}
+
+// An array of objects representing the replication destinations and repository
+// filters for a replication configuration.
+type ReplicationRule struct {
+	// An array of objects representing the destination for a replication rule.
+	Destinations []*ReplicationDestination `json:"destinations,omitempty"`
+	// An array of objects representing the filters for a replication rule.
+	RepositoryFilters []*RepositoryFilter `json:"repositoryFilters,omitempty"`
+}
+
+// The filter settings used with image replication. Specifying a repository
+// filter to a replication rule provides a method for controlling which repositories
+// in a private registry are replicated. If no filters are added, the contents
+// of all repositories are replicated.
+type RepositoryFilter struct {
+	// The repository filter details. When the PREFIX_MATCH filter type is specified,
+	// this value is required and should be the repository name prefix to configure
+	// replication for.
+	Filter *string `json:"filter,omitempty"`
+	// The repository filter type. The only supported value is PREFIX_MATCH, which
+	// is a repository name prefix specified with the filter parameter.
+	FilterType *string `json:"filterType,omitempty"`
 }
 
 // The details of the repository creation template associated with the request.
