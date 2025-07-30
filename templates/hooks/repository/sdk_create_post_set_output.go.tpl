@@ -10,3 +10,9 @@
 			return nil, err
 		}
 	}
+    // Set the replication configuration
+	if ko.Spec.ReplicationConfiguration != nil && len(ko.Spec.ReplicationConfiguration.Rules) > 0 {
+		if _, err := rm.updateReplicationConfiguration(ctx, desired); err != nil{
+			return nil, err
+		}
+	}

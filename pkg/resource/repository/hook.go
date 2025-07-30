@@ -71,6 +71,11 @@ func (rm *resourceManager) setResourceAdditionalFields(
 	if err != nil {
 		return err
 	}
+	// Set replication configuration
+	ko.Spec.ReplicationConfiguration, err = rm.getReplicationConfiguration(ctx, *ko.Spec.RegistryID)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -229,4 +234,80 @@ func equalStrings(a, b *string) bool {
 		return b == nil || *b == ""
 	}
 	return (*a == "" && b == nil) || *a == *b
+}
+
+// getReplicationConfiguration retrieves the replication configuration for a registry.
+func (rm *resourceManager) getReplicationConfiguration(
+	ctx context.Context,
+	registryID string,
+) (*svcapitypes.ReplicationConfiguration, error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.getReplicationConfiguration")
+	var err error
+	defer exit(err)
+
+	var describeRegistryResponse *svcsdk.DescribeRegistryOutput
+	describeRegistryResponse, err = rm.sdkapi.DescribeRegistry(
+		ctx,
+		&svcsdk.DescribeRegistryInput{},
+	)
+	rm.metrics.RecordAPICall("GET", "DescribeRegistry", err)
+	if err != nil {
+		return nil, err
+	}
+
+	if describeRegistryResponse.ReplicationConfiguration == nil ||
+		len(describeRegistryResponse.ReplicationConfiguration.Rules) == 0 {
+		return nil, nil
+	}
+
+	return rm.crdReplicationConfigurationFromSDK(describeRegistryResponse.ReplicationConfiguration), nil
+}
+
+// crdReplicationConfigurationFromSDK converts the SDK ReplicationConfiguration
+// to the CRD ReplicationConfiguration type
+func (rm *resourceManager) crdReplicationConfigurationFromSDK(
+	sdkConfig *svcsdktypes.ReplicationConfiguration,
+) *svcapitypes.ReplicationConfiguration {
+	if sdkConfig == nil {
+		return nil
+	}
+
+	crdConfig := &svcapitypes.ReplicationConfiguration{
+		Rules: make([]*svcapitypes.ReplicationRule, 0, len(sdkConfig.Rules)),
+	}
+
+	for _, rule := range sdkConfig.Rules {
+		crdRule := &svcapitypes.ReplicationRule{
+			Destinations: make([]*svcapitypes.ReplicationDestination, 0, len(rule.Destinations)),
+		}
+
+		for _, dest := range rule.Destinations {
+			crdDest := &svcapitypes.ReplicationDestination{}
+			if dest.Region != nil {
+				crdDest.Region = dest.Region
+			}
+			if dest.RegistryId != nil {
+				crdDest.RegistryID = dest.RegistryId
+			}
+			crdRule.Destinations = append(crdRule.Destinations, crdDest)
+		}
+
+		if rule.RepositoryFilters != nil {
+			crdRule.RepositoryFilters = make([]*svcapitypes.RepositoryFilter, 0, len(rule.RepositoryFilters))
+			for _, filter := range rule.RepositoryFilters {
+				crdFilter := &svcapitypes.RepositoryFilter{}
+				if filter.Filter != nil {
+					crdFilter.Filter = filter.Filter
+				}
+				filterType := string(filter.FilterType)
+				crdFilter.FilterType = &filterType
+				crdRule.RepositoryFilters = append(crdRule.RepositoryFilters, crdFilter)
+			}
+		}
+
+		crdConfig.Rules = append(crdConfig.Rules, crdRule)
+	}
+
+	return crdConfig
 }

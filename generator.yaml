@@ -29,6 +29,10 @@ resources:
         print:
           name: IMAGE-TAG-MUTABILITY
           index: 1
+      ReplicationConfiguration:
+        from:
+          operation: PutReplicationConfiguration
+          path: ReplicationConfiguration
     renames:
       operations:
         CreateRepository:

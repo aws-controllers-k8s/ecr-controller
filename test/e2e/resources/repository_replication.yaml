@@ -1,0 +1,20 @@
+apiVersion: ecr.services.k8s.aws/v1alpha1
+kind: Repository
+metadata:
+  name: $REPOSITORY_NAME
+spec:
+  name: $REPOSITORY_NAME
+  registryID: '$REGISTRY_ID'
+  imageScanningConfiguration:
+    scanOnPush: false
+  imageTagMutability: MUTABLE
+  encryptionConfiguration:
+    encryptionType: AES256
+  replicationConfiguration:
+    rules:
+    - destinations:
+      - region: us-west-2
+        registryID: '$REGISTRY_ID'
+      repositoryFilters:
+      - filter: $REPOSITORY_PREFIX
+        filterType: PREFIX_MATCH
