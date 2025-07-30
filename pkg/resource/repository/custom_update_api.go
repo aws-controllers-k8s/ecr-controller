@@ -85,6 +85,12 @@ func (rm *resourceManager) customUpdateRepository(
 			return nil, err
 		}
 	}
+	if delta.DifferentAt("Spec.ReplicationConfiguration") {
+		updated, err = rm.updateReplicationConfiguration(ctx, updated)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return updated, nil
 }
 
@@ -304,4 +310,107 @@ func (rm *resourceManager) deleteRepositoryPolicy(
 		return nil, err
 	}
 	return desired, nil
+}
+
+// updateReplicationConfiguration calls the PutReplicationConfiguration ECR
+// API call to update the replication configuration for a registry
+func (rm *resourceManager) updateReplicationConfiguration(
+	ctx context.Context,
+	desired *resource,
+) (*resource, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.updateReplicationConfiguration")
+	defer exit(err)
+
+	dspec := desired.ko.Spec
+
+	if dspec.ReplicationConfiguration == nil || len(dspec.ReplicationConfiguration.Rules) == 0 {
+		return rm.deleteReplicationConfiguration(ctx, desired)
+	}
+
+	input := &svcsdk.PutReplicationConfigurationInput{
+		ReplicationConfiguration: rm.sdkReplicationConfigurationFromCRD(dspec.ReplicationConfiguration),
+	}
+
+	_, err = rm.sdkapi.PutReplicationConfiguration(ctx, input)
+	rm.metrics.RecordAPICall("UPDATE", "PutReplicationConfiguration", err)
+	if err != nil {
+		return nil, err
+	}
+	return desired, nil
+}
+
+// deleteReplicationConfiguration calls the PutReplicationConfiguration ECR
+// API call with empty rules to remove replication configuration
+func (rm *resourceManager) deleteReplicationConfiguration(
+	ctx context.Context,
+	desired *resource,
+) (*resource, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.deleteReplicationConfiguration")
+	defer exit(err)
+
+	input := &svcsdk.PutReplicationConfigurationInput{
+		ReplicationConfiguration: &svcsdktypes.ReplicationConfiguration{
+			Rules: []svcsdktypes.ReplicationRule{},
+		},
+	}
+
+	_, err = rm.sdkapi.PutReplicationConfiguration(ctx, input)
+	rm.metrics.RecordAPICall("DELETE", "PutReplicationConfiguration", err)
+	if err != nil {
+		return nil, err
+	}
+	return desired, nil
+}
+
+// sdkReplicationConfigurationFromCRD converts the CRD ReplicationConfiguration
+// to the SDK ReplicationConfiguration type
+func (rm *resourceManager) sdkReplicationConfigurationFromCRD(
+	crdConfig *svcapitypes.ReplicationConfiguration,
+) *svcsdktypes.ReplicationConfiguration {
+	if crdConfig == nil {
+		return nil
+	}
+
+	sdkConfig := &svcsdktypes.ReplicationConfiguration{
+		Rules: make([]svcsdktypes.ReplicationRule, 0, len(crdConfig.Rules)),
+	}
+
+	for _, rule := range crdConfig.Rules {
+		sdkRule := svcsdktypes.ReplicationRule{
+			Destinations: make([]svcsdktypes.ReplicationDestination, 0, len(rule.Destinations)),
+		}
+
+		for _, dest := range rule.Destinations {
+			sdkDest := svcsdktypes.ReplicationDestination{}
+			if dest.Region != nil {
+				sdkDest.Region = aws.String(*dest.Region)
+			}
+			if dest.RegistryID != nil {
+				sdkDest.RegistryId = aws.String(*dest.RegistryID)
+			}
+			sdkRule.Destinations = append(sdkRule.Destinations, sdkDest)
+		}
+
+		if rule.RepositoryFilters != nil {
+			sdkRule.RepositoryFilters = make([]svcsdktypes.RepositoryFilter, 0, len(rule.RepositoryFilters))
+			for _, filter := range rule.RepositoryFilters {
+				sdkFilter := svcsdktypes.RepositoryFilter{}
+				if filter.Filter != nil {
+					sdkFilter.Filter = aws.String(*filter.Filter)
+				}
+				if filter.FilterType != nil {
+					sdkFilter.FilterType = svcsdktypes.RepositoryFilterType(*filter.FilterType)
+				}
+				sdkRule.RepositoryFilters = append(sdkRule.RepositoryFilters, sdkFilter)
+			}
+		}
+
+		sdkConfig.Rules = append(sdkConfig.Rules, sdkRule)
+	}
+
+	return sdkConfig
 }
