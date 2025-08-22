@@ -71,6 +71,10 @@ resources:
         is_immutable: true
       UpstreamRegistryURL:
         is_immutable: true
+      UpstreamRegistry:
+        is_immutable: true
+      UpstreamRepositoryPrefix:
+        is_immutable: true
       CredentialARN:
         references:
           resource: Secret

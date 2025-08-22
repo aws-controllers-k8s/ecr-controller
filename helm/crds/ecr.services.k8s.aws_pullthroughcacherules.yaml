@@ -116,6 +116,9 @@ spec:
               upstreamRegistry:
                 description: The name of the upstream registry.
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
               upstreamRegistryURL:
                 description: |-
                   The registry URL of the upstream public registry to use as the source for
@@ -149,6 +152,9 @@ spec:
 
                   Regex Pattern: `^((?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*/?|ROOT)$`
                 type: string
+                x-kubernetes-validations:
+                - message: Value is immutable once set
+                  rule: self == oldSelf
             required:
             - ecrRepositoryPrefix
             - upstreamRegistryURL

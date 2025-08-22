@@ -53,6 +53,7 @@ type PullThroughCacheRuleSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	RegistryID *string `json:"registryID,omitempty"`
 	// The name of the upstream registry.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	UpstreamRegistry *string `json:"upstreamRegistry,omitempty"`
 	// The registry URL of the upstream public registry to use as the source for
 	// the pull through cache rule. The following is the syntax to use for each
@@ -82,6 +83,7 @@ type PullThroughCacheRuleSpec struct {
 	// ROOT.
 	//
 	// Regex Pattern: `^((?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*/?|ROOT)$`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	UpstreamRepositoryPrefix *string `json:"upstreamRepositoryPrefix,omitempty"`
 }
 
