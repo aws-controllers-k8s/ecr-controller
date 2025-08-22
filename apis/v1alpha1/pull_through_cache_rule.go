@@ -29,11 +29,13 @@ type PullThroughCacheRuleSpec struct {
 	// secret that identifies the credentials to authenticate to the upstream registry.
 	//
 	// Regex Pattern: `^arn:aws:secretsmanager:[a-zA-Z0-9-:]+:secret:ecr\-pullthroughcache\/[a-zA-Z0-9\/_+=.@-]+$`
-	CredentialARN *string `json:"credentialARN,omitempty"`
+	CredentialARN *string                                  `json:"credentialARN,omitempty"`
+	CredentialRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"credentialRef,omitempty"`
 	// Amazon Resource Name (ARN) of the IAM role to be assumed by Amazon ECR to
 	// authenticate to the ECR upstream registry. This role must be in the same
 	// account as the registry that you are configuring.
-	CustomRoleARN *string `json:"customRoleARN,omitempty"`
+	CustomRoleARN *string                                  `json:"customRoleARN,omitempty"`
+	CustomRoleRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"customRoleRef,omitempty"`
 	// The repository name prefix to use when caching images from the source registry.
 	//
 	// There is always an assumed / applied to the end of the prefix. If you specify

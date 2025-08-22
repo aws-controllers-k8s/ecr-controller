@@ -311,10 +311,20 @@ func (in *PullThroughCacheRuleSpec) DeepCopyInto(out *PullThroughCacheRuleSpec) 
 		*out = new(string)
 		**out = **in
 	}
+	if in.CredentialRef != nil {
+		in, out := &in.CredentialRef, &out.CredentialRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.CustomRoleARN != nil {
 		in, out := &in.CustomRoleARN, &out.CustomRoleARN
 		*out = new(string)
 		**out = **in
+	}
+	if in.CustomRoleRef != nil {
+		in, out := &in.CustomRoleRef, &out.CustomRoleRef
+		*out = new(corev1alpha1.AWSResourceReferenceWrapper)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.ECRRepositoryPrefix != nil {
 		in, out := &in.ECRRepositoryPrefix, &out.ECRRepositoryPrefix

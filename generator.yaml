@@ -71,6 +71,16 @@ resources:
         is_immutable: true
       UpstreamRegistryURL:
         is_immutable: true
+      CredentialARN:
+        references:
+          resource: Secret
+          service_name: secretsmanager
+          path: Status.ACKResourceMetadata.ARN
+      CustomRoleARN:
+        references:
+          resource: Role
+          service_name: iam
+          path: Status.ACKResourceMetadata.ARN
     hooks:
       sdk_read_many_post_build_request:
         template_path: hooks/pull_through_cache_rule/sdk_read_many_post_build_request.go.tpl

@@ -50,12 +50,18 @@ func newResourceDelta(
 			delta.Add("Spec.CredentialARN", a.ko.Spec.CredentialARN, b.ko.Spec.CredentialARN)
 		}
 	}
+	if !reflect.DeepEqual(a.ko.Spec.CredentialRef, b.ko.Spec.CredentialRef) {
+		delta.Add("Spec.CredentialRef", a.ko.Spec.CredentialRef, b.ko.Spec.CredentialRef)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN) {
 		delta.Add("Spec.CustomRoleARN", a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN)
 	} else if a.ko.Spec.CustomRoleARN != nil && b.ko.Spec.CustomRoleARN != nil {
 		if *a.ko.Spec.CustomRoleARN != *b.ko.Spec.CustomRoleARN {
 			delta.Add("Spec.CustomRoleARN", a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN)
 		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.CustomRoleRef, b.ko.Spec.CustomRoleRef) {
+		delta.Add("Spec.CustomRoleRef", a.ko.Spec.CustomRoleRef, b.ko.Spec.CustomRoleRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ECRRepositoryPrefix, b.ko.Spec.ECRRepositoryPrefix) {
 		delta.Add("Spec.ECRRepositoryPrefix", a.ko.Spec.ECRRepositoryPrefix, b.ko.Spec.ECRRepositoryPrefix)
