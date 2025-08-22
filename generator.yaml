@@ -84,9 +84,9 @@ ignore:
   resource_names:
   - RepositoryCreationTemplate
   field_paths:
-  - CreatePullThroughCacheRuleOutput.CredentialArn
-  - CreatePullThroughCacheRuleOutput.UpstreamRegistry
-  - CreatePullThroughCacheRuleInput.UpstreamRegistry
-  - CreatePullThroughCacheRuleInput.CredentialArn
+  # - CreatePullThroughCacheRuleOutput.CredentialArn
+  # - CreatePullThroughCacheRuleOutput.UpstreamRegistry
+  # - CreatePullThroughCacheRuleInput.UpstreamRegistry
+  # - CreatePullThroughCacheRuleInput.CredentialArn
   - CreateRepositoryInput.ImageTagMutabilityExclusionFilters
   - CreateRepositoryOutput.Repository.ImageTagMutabilityExclusionFilters

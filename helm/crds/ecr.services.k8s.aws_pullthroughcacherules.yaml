@@ -43,6 +43,13 @@ spec:
 
               The details of a pull through cache rule.
             properties:
+              credentialARN:
+                description: |-
+                  The Amazon Resource Name (ARN) of the Amazon Web Services Secrets Manager
+                  secret that identifies the credentials to authenticate to the upstream registry.
+
+                  Regex Pattern: `^arn:aws:secretsmanager:[a-zA-Z0-9-:]+:secret:ecr\-pullthroughcache\/[a-zA-Z0-9\/_+=.@-]+$`
+                type: string
               customRoleARN:
                 description: |-
                   Amazon Resource Name (ARN) of the IAM role to be assumed by Amazon ECR to
@@ -72,6 +79,9 @@ spec:
                 x-kubernetes-validations:
                 - message: Value is immutable once set
                   rule: self == oldSelf
+              upstreamRegistry:
+                description: The name of the upstream registry.
+                type: string
               upstreamRegistryURL:
                 description: |-
                   The registry URL of the upstream public registry to use as the source for

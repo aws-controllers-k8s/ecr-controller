@@ -25,6 +25,11 @@ import (
 // The details of a pull through cache rule.
 type PullThroughCacheRuleSpec struct {
 
+	// The Amazon Resource Name (ARN) of the Amazon Web Services Secrets Manager
+	// secret that identifies the credentials to authenticate to the upstream registry.
+	//
+	// Regex Pattern: `^arn:aws:secretsmanager:[a-zA-Z0-9-:]+:secret:ecr\-pullthroughcache\/[a-zA-Z0-9\/_+=.@-]+$`
+	CredentialARN *string `json:"credentialARN,omitempty"`
 	// Amazon Resource Name (ARN) of the IAM role to be assumed by Amazon ECR to
 	// authenticate to the ECR upstream registry. This role must be in the same
 	// account as the registry that you are configuring.
@@ -45,6 +50,8 @@ type PullThroughCacheRuleSpec struct {
 	// Regex Pattern: `^[0-9]{12}$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	RegistryID *string `json:"registryID,omitempty"`
+	// The name of the upstream registry.
+	UpstreamRegistry *string `json:"upstreamRegistry,omitempty"`
 	// The registry URL of the upstream public registry to use as the source for
 	// the pull through cache rule. The following is the syntax to use for each
 	// supported upstream registry.

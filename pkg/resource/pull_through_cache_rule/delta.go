@@ -43,6 +43,13 @@ func newResourceDelta(
 		return delta
 	}
 
+	if ackcompare.HasNilDifference(a.ko.Spec.CredentialARN, b.ko.Spec.CredentialARN) {
+		delta.Add("Spec.CredentialARN", a.ko.Spec.CredentialARN, b.ko.Spec.CredentialARN)
+	} else if a.ko.Spec.CredentialARN != nil && b.ko.Spec.CredentialARN != nil {
+		if *a.ko.Spec.CredentialARN != *b.ko.Spec.CredentialARN {
+			delta.Add("Spec.CredentialARN", a.ko.Spec.CredentialARN, b.ko.Spec.CredentialARN)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN) {
 		delta.Add("Spec.CustomRoleARN", a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN)
 	} else if a.ko.Spec.CustomRoleARN != nil && b.ko.Spec.CustomRoleARN != nil {
@@ -62,6 +69,13 @@ func newResourceDelta(
 	} else if a.ko.Spec.RegistryID != nil && b.ko.Spec.RegistryID != nil {
 		if *a.ko.Spec.RegistryID != *b.ko.Spec.RegistryID {
 			delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.UpstreamRegistry, b.ko.Spec.UpstreamRegistry) {
+		delta.Add("Spec.UpstreamRegistry", a.ko.Spec.UpstreamRegistry, b.ko.Spec.UpstreamRegistry)
+	} else if a.ko.Spec.UpstreamRegistry != nil && b.ko.Spec.UpstreamRegistry != nil {
+		if *a.ko.Spec.UpstreamRegistry != *b.ko.Spec.UpstreamRegistry {
+			delta.Add("Spec.UpstreamRegistry", a.ko.Spec.UpstreamRegistry, b.ko.Spec.UpstreamRegistry)
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.UpstreamRegistryURL, b.ko.Spec.UpstreamRegistryURL) {

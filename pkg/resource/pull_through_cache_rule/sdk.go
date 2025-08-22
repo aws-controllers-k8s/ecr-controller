@@ -30,6 +30,7 @@ import (
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ecr"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,6 +99,11 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.CreatedAt = nil
 		}
+		if elem.CredentialArn != nil {
+			ko.Spec.CredentialARN = elem.CredentialArn
+		} else {
+			ko.Spec.CredentialARN = nil
+		}
 		if elem.CustomRoleArn != nil {
 			ko.Spec.CustomRoleARN = elem.CustomRoleArn
 		} else {
@@ -122,6 +128,11 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.RegistryID = elem.RegistryId
 		} else {
 			ko.Spec.RegistryID = nil
+		}
+		if elem.UpstreamRegistry != "" {
+			ko.Spec.UpstreamRegistry = aws.String(string(elem.UpstreamRegistry))
+		} else {
+			ko.Spec.UpstreamRegistry = nil
 		}
 		if elem.UpstreamRegistryUrl != nil {
 			ko.Spec.UpstreamRegistryURL = elem.UpstreamRegistryUrl
@@ -200,6 +211,11 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.CreatedAt = nil
 	}
+	if resp.CredentialArn != nil {
+		ko.Spec.CredentialARN = resp.CredentialArn
+	} else {
+		ko.Spec.CredentialARN = nil
+	}
 	if resp.CustomRoleArn != nil {
 		ko.Spec.CustomRoleARN = resp.CustomRoleArn
 	} else {
@@ -214,6 +230,11 @@ func (rm *resourceManager) sdkCreate(
 		ko.Spec.RegistryID = resp.RegistryId
 	} else {
 		ko.Spec.RegistryID = nil
+	}
+	if resp.UpstreamRegistry != "" {
+		ko.Spec.UpstreamRegistry = aws.String(string(resp.UpstreamRegistry))
+	} else {
+		ko.Spec.UpstreamRegistry = nil
 	}
 	if resp.UpstreamRegistryUrl != nil {
 		ko.Spec.UpstreamRegistryURL = resp.UpstreamRegistryUrl
@@ -238,6 +259,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreatePullThroughCacheRuleInput, error) {
 	res := &svcsdk.CreatePullThroughCacheRuleInput{}
 
+	if r.ko.Spec.CredentialARN != nil {
+		res.CredentialArn = r.ko.Spec.CredentialARN
+	}
 	if r.ko.Spec.CustomRoleARN != nil {
 		res.CustomRoleArn = r.ko.Spec.CustomRoleARN
 	}
@@ -246,6 +270,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.RegistryID != nil {
 		res.RegistryId = r.ko.Spec.RegistryID
+	}
+	if r.ko.Spec.UpstreamRegistry != nil {
+		res.UpstreamRegistry = svcsdktypes.UpstreamRegistry(*r.ko.Spec.UpstreamRegistry)
 	}
 	if r.ko.Spec.UpstreamRegistryURL != nil {
 		res.UpstreamRegistryUrl = r.ko.Spec.UpstreamRegistryURL
@@ -286,6 +313,11 @@ func (rm *resourceManager) sdkUpdate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
+	if resp.CredentialArn != nil {
+		ko.Spec.CredentialARN = resp.CredentialArn
+	} else {
+		ko.Spec.CredentialARN = nil
+	}
 	if resp.CustomRoleArn != nil {
 		ko.Spec.CustomRoleARN = resp.CustomRoleArn
 	} else {
@@ -320,6 +352,9 @@ func (rm *resourceManager) newUpdateRequestPayload(
 ) (*svcsdk.UpdatePullThroughCacheRuleInput, error) {
 	res := &svcsdk.UpdatePullThroughCacheRuleInput{}
 
+	if r.ko.Spec.CredentialARN != nil {
+		res.CredentialArn = r.ko.Spec.CredentialARN
+	}
 	if r.ko.Spec.CustomRoleARN != nil {
 		res.CustomRoleArn = r.ko.Spec.CustomRoleARN
 	}
