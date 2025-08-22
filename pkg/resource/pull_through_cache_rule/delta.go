@@ -43,6 +43,13 @@ func newResourceDelta(
 		return delta
 	}
 
+	if ackcompare.HasNilDifference(a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN) {
+		delta.Add("Spec.CustomRoleARN", a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN)
+	} else if a.ko.Spec.CustomRoleARN != nil && b.ko.Spec.CustomRoleARN != nil {
+		if *a.ko.Spec.CustomRoleARN != *b.ko.Spec.CustomRoleARN {
+			delta.Add("Spec.CustomRoleARN", a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ECRRepositoryPrefix, b.ko.Spec.ECRRepositoryPrefix) {
 		delta.Add("Spec.ECRRepositoryPrefix", a.ko.Spec.ECRRepositoryPrefix, b.ko.Spec.ECRRepositoryPrefix)
 	} else if a.ko.Spec.ECRRepositoryPrefix != nil && b.ko.Spec.ECRRepositoryPrefix != nil {
@@ -62,6 +69,13 @@ func newResourceDelta(
 	} else if a.ko.Spec.UpstreamRegistryURL != nil && b.ko.Spec.UpstreamRegistryURL != nil {
 		if *a.ko.Spec.UpstreamRegistryURL != *b.ko.Spec.UpstreamRegistryURL {
 			delta.Add("Spec.UpstreamRegistryURL", a.ko.Spec.UpstreamRegistryURL, b.ko.Spec.UpstreamRegistryURL)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.UpstreamRepositoryPrefix, b.ko.Spec.UpstreamRepositoryPrefix) {
+		delta.Add("Spec.UpstreamRepositoryPrefix", a.ko.Spec.UpstreamRepositoryPrefix, b.ko.Spec.UpstreamRepositoryPrefix)
+	} else if a.ko.Spec.UpstreamRepositoryPrefix != nil && b.ko.Spec.UpstreamRepositoryPrefix != nil {
+		if *a.ko.Spec.UpstreamRepositoryPrefix != *b.ko.Spec.UpstreamRepositoryPrefix {
+			delta.Add("Spec.UpstreamRepositoryPrefix", a.ko.Spec.UpstreamRepositoryPrefix, b.ko.Spec.UpstreamRepositoryPrefix)
 		}
 	}
 

@@ -97,13 +97,15 @@ type PackageVulnerabilityDetails struct {
 
 // The details of a pull through cache rule.
 type PullThroughCacheRule_SDK struct {
-	CreatedAt           *metav1.Time `json:"createdAt,omitempty"`
-	CredentialARN       *string      `json:"credentialARN,omitempty"`
-	ECRRepositoryPrefix *string      `json:"ecrRepositoryPrefix,omitempty"`
-	RegistryID          *string      `json:"registryID,omitempty"`
-	UpdatedAt           *metav1.Time `json:"updatedAt,omitempty"`
-	UpstreamRegistry    *string      `json:"upstreamRegistry,omitempty"`
-	UpstreamRegistryURL *string      `json:"upstreamRegistryURL,omitempty"`
+	CreatedAt                *metav1.Time `json:"createdAt,omitempty"`
+	CredentialARN            *string      `json:"credentialARN,omitempty"`
+	CustomRoleARN            *string      `json:"customRoleARN,omitempty"`
+	ECRRepositoryPrefix      *string      `json:"ecrRepositoryPrefix,omitempty"`
+	RegistryID               *string      `json:"registryID,omitempty"`
+	UpdatedAt                *metav1.Time `json:"updatedAt,omitempty"`
+	UpstreamRegistry         *string      `json:"upstreamRegistry,omitempty"`
+	UpstreamRegistryURL      *string      `json:"upstreamRegistryURL,omitempty"`
+	UpstreamRepositoryPrefix *string      `json:"upstreamRepositoryPrefix,omitempty"`
 }
 
 // Details about the recommended course of action to remediate the finding.
@@ -118,6 +120,7 @@ type ReplicationDestination struct {
 
 // The details of the repository creation template associated with the request.
 type RepositoryCreationTemplate struct {
+	CustomRoleARN      *string `json:"customRoleARN,omitempty"`
 	ImageTagMutability *string `json:"imageTagMutability,omitempty"`
 	RepositoryPolicy   *string `json:"repositoryPolicy,omitempty"`
 	ResourceTags       []*Tag  `json:"resourceTags,omitempty"`

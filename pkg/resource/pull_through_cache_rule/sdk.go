@@ -98,6 +98,11 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.CreatedAt = nil
 		}
+		if elem.CustomRoleArn != nil {
+			ko.Spec.CustomRoleARN = elem.CustomRoleArn
+		} else {
+			ko.Spec.CustomRoleARN = nil
+		}
 		if elem.EcrRepositoryPrefix != nil {
 			if ko.Spec.ECRRepositoryPrefix != nil {
 				if *elem.EcrRepositoryPrefix != *ko.Spec.ECRRepositoryPrefix {
@@ -122,6 +127,11 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.UpstreamRegistryURL = elem.UpstreamRegistryUrl
 		} else {
 			ko.Spec.UpstreamRegistryURL = nil
+		}
+		if elem.UpstreamRepositoryPrefix != nil {
+			ko.Spec.UpstreamRepositoryPrefix = elem.UpstreamRepositoryPrefix
+		} else {
+			ko.Spec.UpstreamRepositoryPrefix = nil
 		}
 		found = true
 		break
@@ -190,6 +200,11 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.CreatedAt = nil
 	}
+	if resp.CustomRoleArn != nil {
+		ko.Spec.CustomRoleARN = resp.CustomRoleArn
+	} else {
+		ko.Spec.CustomRoleARN = nil
+	}
 	if resp.EcrRepositoryPrefix != nil {
 		ko.Spec.ECRRepositoryPrefix = resp.EcrRepositoryPrefix
 	} else {
@@ -205,6 +220,11 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.UpstreamRegistryURL = nil
 	}
+	if resp.UpstreamRepositoryPrefix != nil {
+		ko.Spec.UpstreamRepositoryPrefix = resp.UpstreamRepositoryPrefix
+	} else {
+		ko.Spec.UpstreamRepositoryPrefix = nil
+	}
 
 	rm.setStatusDefaults(ko)
 	return &resource{ko}, nil
@@ -218,6 +238,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreatePullThroughCacheRuleInput, error) {
 	res := &svcsdk.CreatePullThroughCacheRuleInput{}
 
+	if r.ko.Spec.CustomRoleARN != nil {
+		res.CustomRoleArn = r.ko.Spec.CustomRoleARN
+	}
 	if r.ko.Spec.ECRRepositoryPrefix != nil {
 		res.EcrRepositoryPrefix = r.ko.Spec.ECRRepositoryPrefix
 	}
@@ -226,6 +249,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 	}
 	if r.ko.Spec.UpstreamRegistryURL != nil {
 		res.UpstreamRegistryUrl = r.ko.Spec.UpstreamRegistryURL
+	}
+	if r.ko.Spec.UpstreamRepositoryPrefix != nil {
+		res.UpstreamRepositoryPrefix = r.ko.Spec.UpstreamRepositoryPrefix
 	}
 
 	return res, nil
@@ -260,6 +286,11 @@ func (rm *resourceManager) sdkUpdate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
+	if resp.CustomRoleArn != nil {
+		ko.Spec.CustomRoleARN = resp.CustomRoleArn
+	} else {
+		ko.Spec.CustomRoleARN = nil
+	}
 	if resp.EcrRepositoryPrefix != nil {
 		ko.Spec.ECRRepositoryPrefix = resp.EcrRepositoryPrefix
 	} else {
@@ -269,6 +300,11 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.RegistryID = resp.RegistryId
 	} else {
 		ko.Spec.RegistryID = nil
+	}
+	if resp.UpstreamRepositoryPrefix != nil {
+		ko.Spec.UpstreamRepositoryPrefix = resp.UpstreamRepositoryPrefix
+	} else {
+		ko.Spec.UpstreamRepositoryPrefix = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -284,6 +320,9 @@ func (rm *resourceManager) newUpdateRequestPayload(
 ) (*svcsdk.UpdatePullThroughCacheRuleInput, error) {
 	res := &svcsdk.UpdatePullThroughCacheRuleInput{}
 
+	if r.ko.Spec.CustomRoleARN != nil {
+		res.CustomRoleArn = r.ko.Spec.CustomRoleARN
+	}
 	if r.ko.Spec.ECRRepositoryPrefix != nil {
 		res.EcrRepositoryPrefix = r.ko.Spec.ECRRepositoryPrefix
 	}

@@ -88,3 +88,5 @@ ignore:
   - CreatePullThroughCacheRuleOutput.UpstreamRegistry
   - CreatePullThroughCacheRuleInput.UpstreamRegistry
   - CreatePullThroughCacheRuleInput.CredentialArn
+  - CreateRepositoryInput.ImageTagMutabilityExclusionFilters
+  - CreateRepositoryOutput.Repository.ImageTagMutabilityExclusionFilters
