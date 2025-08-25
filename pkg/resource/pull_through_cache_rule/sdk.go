@@ -30,6 +30,7 @@ import (
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/ecr"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,6 +99,16 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Status.CreatedAt = nil
 		}
+		if elem.CredentialArn != nil {
+			ko.Spec.CredentialARN = elem.CredentialArn
+		} else {
+			ko.Spec.CredentialARN = nil
+		}
+		if elem.CustomRoleArn != nil {
+			ko.Spec.CustomRoleARN = elem.CustomRoleArn
+		} else {
+			ko.Spec.CustomRoleARN = nil
+		}
 		if elem.EcrRepositoryPrefix != nil {
 			if ko.Spec.ECRRepositoryPrefix != nil {
 				if *elem.EcrRepositoryPrefix != *ko.Spec.ECRRepositoryPrefix {
@@ -118,10 +129,20 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.RegistryID = nil
 		}
+		if elem.UpstreamRegistry != "" {
+			ko.Spec.UpstreamRegistry = aws.String(string(elem.UpstreamRegistry))
+		} else {
+			ko.Spec.UpstreamRegistry = nil
+		}
 		if elem.UpstreamRegistryUrl != nil {
 			ko.Spec.UpstreamRegistryURL = elem.UpstreamRegistryUrl
 		} else {
 			ko.Spec.UpstreamRegistryURL = nil
+		}
+		if elem.UpstreamRepositoryPrefix != nil {
+			ko.Spec.UpstreamRepositoryPrefix = elem.UpstreamRepositoryPrefix
+		} else {
+			ko.Spec.UpstreamRepositoryPrefix = nil
 		}
 		found = true
 		break
@@ -190,6 +211,16 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.CreatedAt = nil
 	}
+	if resp.CredentialArn != nil {
+		ko.Spec.CredentialARN = resp.CredentialArn
+	} else {
+		ko.Spec.CredentialARN = nil
+	}
+	if resp.CustomRoleArn != nil {
+		ko.Spec.CustomRoleARN = resp.CustomRoleArn
+	} else {
+		ko.Spec.CustomRoleARN = nil
+	}
 	if resp.EcrRepositoryPrefix != nil {
 		ko.Spec.ECRRepositoryPrefix = resp.EcrRepositoryPrefix
 	} else {
@@ -200,10 +231,20 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.RegistryID = nil
 	}
+	if resp.UpstreamRegistry != "" {
+		ko.Spec.UpstreamRegistry = aws.String(string(resp.UpstreamRegistry))
+	} else {
+		ko.Spec.UpstreamRegistry = nil
+	}
 	if resp.UpstreamRegistryUrl != nil {
 		ko.Spec.UpstreamRegistryURL = resp.UpstreamRegistryUrl
 	} else {
 		ko.Spec.UpstreamRegistryURL = nil
+	}
+	if resp.UpstreamRepositoryPrefix != nil {
+		ko.Spec.UpstreamRepositoryPrefix = resp.UpstreamRepositoryPrefix
+	} else {
+		ko.Spec.UpstreamRepositoryPrefix = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -218,14 +259,26 @@ func (rm *resourceManager) newCreateRequestPayload(
 ) (*svcsdk.CreatePullThroughCacheRuleInput, error) {
 	res := &svcsdk.CreatePullThroughCacheRuleInput{}
 
+	if r.ko.Spec.CredentialARN != nil {
+		res.CredentialArn = r.ko.Spec.CredentialARN
+	}
+	if r.ko.Spec.CustomRoleARN != nil {
+		res.CustomRoleArn = r.ko.Spec.CustomRoleARN
+	}
 	if r.ko.Spec.ECRRepositoryPrefix != nil {
 		res.EcrRepositoryPrefix = r.ko.Spec.ECRRepositoryPrefix
 	}
 	if r.ko.Spec.RegistryID != nil {
 		res.RegistryId = r.ko.Spec.RegistryID
 	}
+	if r.ko.Spec.UpstreamRegistry != nil {
+		res.UpstreamRegistry = svcsdktypes.UpstreamRegistry(*r.ko.Spec.UpstreamRegistry)
+	}
 	if r.ko.Spec.UpstreamRegistryURL != nil {
 		res.UpstreamRegistryUrl = r.ko.Spec.UpstreamRegistryURL
+	}
+	if r.ko.Spec.UpstreamRepositoryPrefix != nil {
+		res.UpstreamRepositoryPrefix = r.ko.Spec.UpstreamRepositoryPrefix
 	}
 
 	return res, nil
@@ -260,6 +313,16 @@ func (rm *resourceManager) sdkUpdate(
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
 
+	if resp.CredentialArn != nil {
+		ko.Spec.CredentialARN = resp.CredentialArn
+	} else {
+		ko.Spec.CredentialARN = nil
+	}
+	if resp.CustomRoleArn != nil {
+		ko.Spec.CustomRoleARN = resp.CustomRoleArn
+	} else {
+		ko.Spec.CustomRoleARN = nil
+	}
 	if resp.EcrRepositoryPrefix != nil {
 		ko.Spec.ECRRepositoryPrefix = resp.EcrRepositoryPrefix
 	} else {
@@ -269,6 +332,11 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.RegistryID = resp.RegistryId
 	} else {
 		ko.Spec.RegistryID = nil
+	}
+	if resp.UpstreamRepositoryPrefix != nil {
+		ko.Spec.UpstreamRepositoryPrefix = resp.UpstreamRepositoryPrefix
+	} else {
+		ko.Spec.UpstreamRepositoryPrefix = nil
 	}
 
 	rm.setStatusDefaults(ko)
@@ -284,6 +352,12 @@ func (rm *resourceManager) newUpdateRequestPayload(
 ) (*svcsdk.UpdatePullThroughCacheRuleInput, error) {
 	res := &svcsdk.UpdatePullThroughCacheRuleInput{}
 
+	if r.ko.Spec.CredentialARN != nil {
+		res.CredentialArn = r.ko.Spec.CredentialARN
+	}
+	if r.ko.Spec.CustomRoleARN != nil {
+		res.CustomRoleArn = r.ko.Spec.CustomRoleARN
+	}
 	if r.ko.Spec.ECRRepositoryPrefix != nil {
 		res.EcrRepositoryPrefix = r.ko.Spec.ECRRepositoryPrefix
 	}

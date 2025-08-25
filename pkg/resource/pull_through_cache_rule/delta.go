@@ -43,6 +43,26 @@ func newResourceDelta(
 		return delta
 	}
 
+	if ackcompare.HasNilDifference(a.ko.Spec.CredentialARN, b.ko.Spec.CredentialARN) {
+		delta.Add("Spec.CredentialARN", a.ko.Spec.CredentialARN, b.ko.Spec.CredentialARN)
+	} else if a.ko.Spec.CredentialARN != nil && b.ko.Spec.CredentialARN != nil {
+		if *a.ko.Spec.CredentialARN != *b.ko.Spec.CredentialARN {
+			delta.Add("Spec.CredentialARN", a.ko.Spec.CredentialARN, b.ko.Spec.CredentialARN)
+		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.CredentialRef, b.ko.Spec.CredentialRef) {
+		delta.Add("Spec.CredentialRef", a.ko.Spec.CredentialRef, b.ko.Spec.CredentialRef)
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN) {
+		delta.Add("Spec.CustomRoleARN", a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN)
+	} else if a.ko.Spec.CustomRoleARN != nil && b.ko.Spec.CustomRoleARN != nil {
+		if *a.ko.Spec.CustomRoleARN != *b.ko.Spec.CustomRoleARN {
+			delta.Add("Spec.CustomRoleARN", a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN)
+		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.CustomRoleRef, b.ko.Spec.CustomRoleRef) {
+		delta.Add("Spec.CustomRoleRef", a.ko.Spec.CustomRoleRef, b.ko.Spec.CustomRoleRef)
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ECRRepositoryPrefix, b.ko.Spec.ECRRepositoryPrefix) {
 		delta.Add("Spec.ECRRepositoryPrefix", a.ko.Spec.ECRRepositoryPrefix, b.ko.Spec.ECRRepositoryPrefix)
 	} else if a.ko.Spec.ECRRepositoryPrefix != nil && b.ko.Spec.ECRRepositoryPrefix != nil {
@@ -57,11 +77,25 @@ func newResourceDelta(
 			delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.UpstreamRegistry, b.ko.Spec.UpstreamRegistry) {
+		delta.Add("Spec.UpstreamRegistry", a.ko.Spec.UpstreamRegistry, b.ko.Spec.UpstreamRegistry)
+	} else if a.ko.Spec.UpstreamRegistry != nil && b.ko.Spec.UpstreamRegistry != nil {
+		if *a.ko.Spec.UpstreamRegistry != *b.ko.Spec.UpstreamRegistry {
+			delta.Add("Spec.UpstreamRegistry", a.ko.Spec.UpstreamRegistry, b.ko.Spec.UpstreamRegistry)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.UpstreamRegistryURL, b.ko.Spec.UpstreamRegistryURL) {
 		delta.Add("Spec.UpstreamRegistryURL", a.ko.Spec.UpstreamRegistryURL, b.ko.Spec.UpstreamRegistryURL)
 	} else if a.ko.Spec.UpstreamRegistryURL != nil && b.ko.Spec.UpstreamRegistryURL != nil {
 		if *a.ko.Spec.UpstreamRegistryURL != *b.ko.Spec.UpstreamRegistryURL {
 			delta.Add("Spec.UpstreamRegistryURL", a.ko.Spec.UpstreamRegistryURL, b.ko.Spec.UpstreamRegistryURL)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.UpstreamRepositoryPrefix, b.ko.Spec.UpstreamRepositoryPrefix) {
+		delta.Add("Spec.UpstreamRepositoryPrefix", a.ko.Spec.UpstreamRepositoryPrefix, b.ko.Spec.UpstreamRepositoryPrefix)
+	} else if a.ko.Spec.UpstreamRepositoryPrefix != nil && b.ko.Spec.UpstreamRepositoryPrefix != nil {
+		if *a.ko.Spec.UpstreamRepositoryPrefix != *b.ko.Spec.UpstreamRepositoryPrefix {
+			delta.Add("Spec.UpstreamRepositoryPrefix", a.ko.Spec.UpstreamRepositoryPrefix, b.ko.Spec.UpstreamRepositoryPrefix)
 		}
 	}
 

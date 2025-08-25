@@ -25,9 +25,23 @@ import (
 // The details of a pull through cache rule.
 type PullThroughCacheRuleSpec struct {
 
+	// The Amazon Resource Name (ARN) of the Amazon Web Services Secrets Manager
+	// secret that identifies the credentials to authenticate to the upstream registry.
+	//
+	// Regex Pattern: `^arn:aws:secretsmanager:[a-zA-Z0-9-:]+:secret:ecr\-pullthroughcache\/[a-zA-Z0-9\/_+=.@-]+$`
+	CredentialARN *string                                  `json:"credentialARN,omitempty"`
+	CredentialRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"credentialRef,omitempty"`
+	// Amazon Resource Name (ARN) of the IAM role to be assumed by Amazon ECR to
+	// authenticate to the ECR upstream registry. This role must be in the same
+	// account as the registry that you are configuring.
+	CustomRoleARN *string                                  `json:"customRoleARN,omitempty"`
+	CustomRoleRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"customRoleRef,omitempty"`
 	// The repository name prefix to use when caching images from the source registry.
 	//
-	// Regex Pattern: `^(?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*$`
+	// There is always an assumed / applied to the end of the prefix. If you specify
+	// ecr-public as the prefix, Amazon ECR treats that as ecr-public/.
+	//
+	// Regex Pattern: `^((?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*/?|ROOT)$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	ECRRepositoryPrefix *string `json:"ecrRepositoryPrefix"`
@@ -38,25 +52,39 @@ type PullThroughCacheRuleSpec struct {
 	// Regex Pattern: `^[0-9]{12}$`
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	RegistryID *string `json:"registryID,omitempty"`
+	// The name of the upstream registry.
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+	UpstreamRegistry *string `json:"upstreamRegistry,omitempty"`
 	// The registry URL of the upstream public registry to use as the source for
 	// the pull through cache rule. The following is the syntax to use for each
 	// supported upstream registry.
 	//
-	//   - Amazon ECR Public (ecr-public) - public.ecr.aws
+	//   - Amazon ECR (ecr) – .dkr.ecr..amazonaws.com
 	//
-	//   - Docker Hub (docker-hub) - registry-1.docker.io
+	//   - Amazon ECR Public (ecr-public) – public.ecr.aws
 	//
-	//   - Quay (quay) - quay.io
+	//   - Docker Hub (docker-hub) – registry-1.docker.io
 	//
-	//   - Kubernetes (k8s) - registry.k8s.io
+	//   - GitHub Container Registry (github-container-registry) – ghcr.io
 	//
-	//   - GitHub Container Registry (github-container-registry) - ghcr.io
+	//   - GitLab Container Registry (gitlab-container-registry) – registry.gitlab.com
 	//
-	//   - Microsoft Azure Container Registry (azure-container-registry) - .azurecr.io
+	//   - Kubernetes (k8s) – registry.k8s.io
+	//
+	//   - Microsoft Azure Container Registry (azure-container-registry) – .azurecr.io
+	//
+	//   - Quay (quay) – quay.io
 	//
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	// +kubebuilder:validation:Required
 	UpstreamRegistryURL *string `json:"upstreamRegistryURL"`
+	// The repository name prefix of the upstream registry to match with the upstream
+	// repository name. When this field isn't specified, Amazon ECR will use the
+	// ROOT.
+	//
+	// Regex Pattern: `^((?:[a-z0-9]+(?:[._-][a-z0-9]+)*/)*[a-z0-9]+(?:[._-][a-z0-9]+)*/?|ROOT)$`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+	UpstreamRepositoryPrefix *string `json:"upstreamRepositoryPrefix,omitempty"`
 }
 
 // PullThroughCacheRuleStatus defines the observed state of PullThroughCacheRule

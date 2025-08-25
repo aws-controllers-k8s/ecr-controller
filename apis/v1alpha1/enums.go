@@ -58,8 +58,16 @@ const (
 type ImageTagMutability string
 
 const (
-	ImageTagMutability_IMMUTABLE ImageTagMutability = "IMMUTABLE"
-	ImageTagMutability_MUTABLE   ImageTagMutability = "MUTABLE"
+	ImageTagMutability_IMMUTABLE                ImageTagMutability = "IMMUTABLE"
+	ImageTagMutability_IMMUTABLE_WITH_EXCLUSION ImageTagMutability = "IMMUTABLE_WITH_EXCLUSION"
+	ImageTagMutability_MUTABLE                  ImageTagMutability = "MUTABLE"
+	ImageTagMutability_MUTABLE_WITH_EXCLUSION   ImageTagMutability = "MUTABLE_WITH_EXCLUSION"
+)
+
+type ImageTagMutabilityExclusionFilterType string
+
+const (
+	ImageTagMutabilityExclusionFilterType_WILDCARD ImageTagMutabilityExclusionFilterType = "WILDCARD"
 )
 
 type LayerAvailability string
@@ -122,6 +130,7 @@ const (
 	ScanStatus_FAILED                   ScanStatus = "FAILED"
 	ScanStatus_FINDINGS_UNAVAILABLE     ScanStatus = "FINDINGS_UNAVAILABLE"
 	ScanStatus_IN_PROGRESS              ScanStatus = "IN_PROGRESS"
+	ScanStatus_LIMIT_EXCEEDED           ScanStatus = "LIMIT_EXCEEDED"
 	ScanStatus_PENDING                  ScanStatus = "PENDING"
 	ScanStatus_SCAN_ELIGIBILITY_EXPIRED ScanStatus = "SCAN_ELIGIBILITY_EXPIRED"
 	ScanStatus_UNSUPPORTED_IMAGE        ScanStatus = "UNSUPPORTED_IMAGE"
@@ -159,6 +168,7 @@ type UpstreamRegistry string
 const (
 	UpstreamRegistry_azure_container_registry  UpstreamRegistry = "azure-container-registry"
 	UpstreamRegistry_docker_hub                UpstreamRegistry = "docker-hub"
+	UpstreamRegistry_ecr                       UpstreamRegistry = "ecr"
 	UpstreamRegistry_ecr_public                UpstreamRegistry = "ecr-public"
 	UpstreamRegistry_github_container_registry UpstreamRegistry = "github-container-registry"
 	UpstreamRegistry_gitlab_container_registry UpstreamRegistry = "gitlab-container-registry"
