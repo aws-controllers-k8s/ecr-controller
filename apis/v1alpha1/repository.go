@@ -36,6 +36,9 @@ type RepositorySpec struct {
 	// be overwritten. If IMMUTABLE is specified, all image tags within the repository
 	// will be immutable which will prevent them from being overwritten.
 	ImageTagMutability *string `json:"imageTagMutability,omitempty"`
+	// Creates a repository with a list of filters that define which image tags
+	// can override the default image tag mutability setting.
+	ImageTagMutabilityExclusionFilters []*ImageTagMutabilityExclusionFilter `json:"imageTagMutabilityExclusionFilters,omitempty"`
 	// The JSON repository policy text to apply to the repository.
 	LifecyclePolicy *string `json:"lifecyclePolicy,omitempty"`
 	// The name to use for the repository. The repository name may be specified

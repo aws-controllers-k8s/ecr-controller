@@ -7,7 +7,10 @@ spec:
   registryID: '$REGISTRY_ID'
   imageScanningConfiguration:
     scanOnPush: false
-  imageTagMutability: MUTABLE
+  imageTagMutability: MUTABLE_WITH_EXCLUSION
+  imageTagMutabilityExclusionFilters:
+    - $IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_1
+    - $IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_2
   encryptionConfiguration:
     encryptionType: AES256
   policy: '$REPOSITORY_POLICY'

@@ -120,6 +120,22 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.ImageTagMutability = nil
 		}
+		if elem.ImageTagMutabilityExclusionFilters != nil {
+			f4 := []*svcapitypes.ImageTagMutabilityExclusionFilter{}
+			for _, f4iter := range elem.ImageTagMutabilityExclusionFilters {
+				f4elem := &svcapitypes.ImageTagMutabilityExclusionFilter{}
+				if f4iter.Filter != nil {
+					f4elem.Filter = f4iter.Filter
+				}
+				if f4iter.FilterType != "" {
+					f4elem.FilterType = aws.String(string(f4iter.FilterType))
+				}
+				f4 = append(f4, f4elem)
+			}
+			ko.Spec.ImageTagMutabilityExclusionFilters = f4
+		} else {
+			ko.Spec.ImageTagMutabilityExclusionFilters = nil
+		}
 		if elem.RegistryId != nil {
 			ko.Spec.RegistryID = elem.RegistryId
 		} else {
@@ -247,6 +263,22 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.ImageTagMutability = nil
 	}
+	if resp.Repository.ImageTagMutabilityExclusionFilters != nil {
+		f4 := []*svcapitypes.ImageTagMutabilityExclusionFilter{}
+		for _, f4iter := range resp.Repository.ImageTagMutabilityExclusionFilters {
+			f4elem := &svcapitypes.ImageTagMutabilityExclusionFilter{}
+			if f4iter.Filter != nil {
+				f4elem.Filter = f4iter.Filter
+			}
+			if f4iter.FilterType != "" {
+				f4elem.FilterType = aws.String(string(f4iter.FilterType))
+			}
+			f4 = append(f4, f4elem)
+		}
+		ko.Spec.ImageTagMutabilityExclusionFilters = f4
+	} else {
+		ko.Spec.ImageTagMutabilityExclusionFilters = nil
+	}
 	if resp.Repository.RegistryId != nil {
 		ko.Spec.RegistryID = resp.Repository.RegistryId
 	} else {
@@ -314,6 +346,20 @@ func (rm *resourceManager) newCreateRequestPayload(
 	if r.ko.Spec.ImageTagMutability != nil {
 		res.ImageTagMutability = svcsdktypes.ImageTagMutability(*r.ko.Spec.ImageTagMutability)
 	}
+	if r.ko.Spec.ImageTagMutabilityExclusionFilters != nil {
+		f3 := []svcsdktypes.ImageTagMutabilityExclusionFilter{}
+		for _, f3iter := range r.ko.Spec.ImageTagMutabilityExclusionFilters {
+			f3elem := &svcsdktypes.ImageTagMutabilityExclusionFilter{}
+			if f3iter.Filter != nil {
+				f3elem.Filter = f3iter.Filter
+			}
+			if f3iter.FilterType != nil {
+				f3elem.FilterType = svcsdktypes.ImageTagMutabilityExclusionFilterType(*f3iter.FilterType)
+			}
+			f3 = append(f3, *f3elem)
+		}
+		res.ImageTagMutabilityExclusionFilters = f3
+	}
 	if r.ko.Spec.RegistryID != nil {
 		res.RegistryId = r.ko.Spec.RegistryID
 	}
@@ -321,18 +367,18 @@ func (rm *resourceManager) newCreateRequestPayload(
 		res.RepositoryName = r.ko.Spec.Name
 	}
 	if r.ko.Spec.Tags != nil {
-		f5 := []svcsdktypes.Tag{}
-		for _, f5iter := range r.ko.Spec.Tags {
-			f5elem := &svcsdktypes.Tag{}
-			if f5iter.Key != nil {
-				f5elem.Key = f5iter.Key
+		f6 := []svcsdktypes.Tag{}
+		for _, f6iter := range r.ko.Spec.Tags {
+			f6elem := &svcsdktypes.Tag{}
+			if f6iter.Key != nil {
+				f6elem.Key = f6iter.Key
 			}
-			if f5iter.Value != nil {
-				f5elem.Value = f5iter.Value
+			if f6iter.Value != nil {
+				f6elem.Value = f6iter.Value
 			}
-			f5 = append(f5, *f5elem)
+			f6 = append(f6, *f6elem)
 		}
-		res.Tags = f5
+		res.Tags = f6
 	}
 
 	return res, nil

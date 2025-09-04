@@ -80,6 +80,13 @@ func newResourceDelta(
 			delta.Add("Spec.ImageTagMutability", a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability)
 		}
 	}
+	if len(a.ko.Spec.ImageTagMutabilityExclusionFilters) != len(b.ko.Spec.ImageTagMutabilityExclusionFilters) {
+		delta.Add("Spec.ImageTagMutabilityExclusionFilters", a.ko.Spec.ImageTagMutabilityExclusionFilters, b.ko.Spec.ImageTagMutabilityExclusionFilters)
+	} else if len(a.ko.Spec.ImageTagMutabilityExclusionFilters) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.ImageTagMutabilityExclusionFilters, b.ko.Spec.ImageTagMutabilityExclusionFilters) {
+			delta.Add("Spec.ImageTagMutabilityExclusionFilters", a.ko.Spec.ImageTagMutabilityExclusionFilters, b.ko.Spec.ImageTagMutabilityExclusionFilters)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.LifecyclePolicy, b.ko.Spec.LifecyclePolicy) {
 		delta.Add("Spec.LifecyclePolicy", a.ko.Spec.LifecyclePolicy, b.ko.Spec.LifecyclePolicy)
 	} else if a.ko.Spec.LifecyclePolicy != nil && b.ko.Spec.LifecyclePolicy != nil {

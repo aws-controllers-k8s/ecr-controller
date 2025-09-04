@@ -90,6 +90,13 @@ type ImageScanningConfiguration struct {
 	ScanOnPush *bool `json:"scanOnPush,omitempty"`
 }
 
+// Overrides the default image tag mutability setting of the repository for
+// image tags that match the specified filters.
+type ImageTagMutabilityExclusionFilter struct {
+	Filter     *string `json:"filter,omitempty"`
+	FilterType *string `json:"filterType,omitempty"`
+}
+
 // Information about a package vulnerability finding.
 type PackageVulnerabilityDetails struct {
 	SourceURL *string `json:"sourceURL,omitempty"`
@@ -120,10 +127,11 @@ type ReplicationDestination struct {
 
 // The details of the repository creation template associated with the request.
 type RepositoryCreationTemplate struct {
-	CustomRoleARN      *string `json:"customRoleARN,omitempty"`
-	ImageTagMutability *string `json:"imageTagMutability,omitempty"`
-	RepositoryPolicy   *string `json:"repositoryPolicy,omitempty"`
-	ResourceTags       []*Tag  `json:"resourceTags,omitempty"`
+	CustomRoleARN                      *string                              `json:"customRoleARN,omitempty"`
+	ImageTagMutability                 *string                              `json:"imageTagMutability,omitempty"`
+	ImageTagMutabilityExclusionFilters []*ImageTagMutabilityExclusionFilter `json:"imageTagMutabilityExclusionFilters,omitempty"`
+	RepositoryPolicy                   *string                              `json:"repositoryPolicy,omitempty"`
+	ResourceTags                       []*Tag                               `json:"resourceTags,omitempty"`
 }
 
 // The details of the scanning configuration for a repository.
@@ -157,12 +165,13 @@ type Repository_SDK struct {
 	// in the Amazon Elastic Container Registry User Guide.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 	// The image scanning configuration for a repository.
-	ImageScanningConfiguration *ImageScanningConfiguration `json:"imageScanningConfiguration,omitempty"`
-	ImageTagMutability         *string                     `json:"imageTagMutability,omitempty"`
-	RegistryID                 *string                     `json:"registryID,omitempty"`
-	RepositoryARN              *string                     `json:"repositoryARN,omitempty"`
-	RepositoryName             *string                     `json:"repositoryName,omitempty"`
-	RepositoryURI              *string                     `json:"repositoryURI,omitempty"`
+	ImageScanningConfiguration         *ImageScanningConfiguration          `json:"imageScanningConfiguration,omitempty"`
+	ImageTagMutability                 *string                              `json:"imageTagMutability,omitempty"`
+	ImageTagMutabilityExclusionFilters []*ImageTagMutabilityExclusionFilter `json:"imageTagMutabilityExclusionFilters,omitempty"`
+	RegistryID                         *string                              `json:"registryID,omitempty"`
+	RepositoryARN                      *string                              `json:"repositoryARN,omitempty"`
+	RepositoryName                     *string                              `json:"repositoryName,omitempty"`
+	RepositoryURI                      *string                              `json:"repositoryURI,omitempty"`
 }
 
 // The metadata to apply to a resource to help you categorize and organize them.

@@ -37,6 +37,9 @@ LIFECYCLE_POLICY_FILTERING_ON_IMAGE_AGE = '{"rules":[{"rulePriority":1,"descript
 
 REPOSITORY_POLICY_GET_DOWNLOAD_URL_ALL = '{"Version":"2012-10-17","Statement":[{"Sid":"AllowPull","Effect":"Allow","Principal":"*","Action":"ecr:GetDownloadUrlForLayer"}]}'
 
+IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_DEV = '{"filter": "*.dev","filterType": "WILDCARD"}'
+IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_STAGING = '{"filter": "*.staging","filterType": "WILDCARD"}'
+
 def minify_json_string(json_string: str) -> str:
     return json_string.replace("\n", "").replace(" ", "")
 
@@ -367,6 +370,79 @@ class TestRepository:
         exists = self.repository_exists(ecr_client, resource_name)
         assert not exists
 
+    def test_mutability(self, ecr_client):
+        resource_name = random_suffix_name("ecr-repository", 24)
+
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["REPOSITORY_NAME"] = resource_name
+        replacements["IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_1"] = IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_DEV
+
+        # Load Repository CR
+        resource_data = load_ecr_resource(
+            "repository_mutability",
+            additional_replacements=replacements,
+        )
+        logging.debug(resource_data)
+
+        # Create k8s resource
+        ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        assert cr is not None
+        assert k8s.get_resource_exists(ref)
+
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Get latest repository CR
+        cr = k8s.wait_resource_consumed_by_controller(ref)
+
+        # Check ECR repository exists
+        repo = self.get_repository(ecr_client, resource_name)
+        assert repo is not None
+
+        mutability_type = repo["imageTagMutability"]
+        exclusion_filters = repo["imageTagMutabilityExclusionFilters"]
+        assert mutability_type == "MUTABLE_WITH_EXCLUSION"
+        assert len(exclusion_filters) == 1
+        assert exclusion_filters[0]["filterType"] == "WILDCARD"
+        assert exclusion_filters[0]["filter"] == "*.dev"
+
+        # Remove repository policy
+        cr["spec"]["imageTagMutability"] = "IMMUTABLE_WITH_EXCLUSION"
+        cr["spec"]["imageTagMutabilityExclusionFilters"] = [{
+                "filterType": "WILDCARD",
+                "filter": "*.staging"
+        }]
+
+
+        # Patch k8s resource
+        k8s.patch_custom_resource(ref, cr)
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+
+        repo = self.get_repository(ecr_client, resource_name)
+        assert repo is not None
+
+        mutability_type = repo["imageTagMutability"]
+        exclusion_filters = repo["imageTagMutabilityExclusionFilters"]
+        assert mutability_type == "IMMUTABLE_WITH_EXCLUSION"
+        assert len(exclusion_filters) == 1
+        assert exclusion_filters[0]["filterType"] == "WILDCARD"
+        assert exclusion_filters[0]["filter"] == "*.staging"
+
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Check ECR repository doesn't exists
+        exists = self.repository_exists(ecr_client, resource_name)
+        assert not exists
+
     def test_repository_create_will_all_fields(self, ecr_client):
         resource_name = random_suffix_name("ecr-repository", 24)
 
@@ -374,6 +450,8 @@ class TestRepository:
         replacements["REPOSITORY_NAME"] = resource_name
         replacements["REPOSITORY_POLICY"] = REPOSITORY_POLICY_GET_DOWNLOAD_URL_ALL
         replacements["REPOSITORY_LIFECYCLE_POLICY"] = LIFECYCLE_POLICY_FILTERING_ON_IMAGE_AGE
+        replacements["IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_1"] = IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_DEV
+        replacements["IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_2"] = IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_STAGING
         replacements["REGISTRY_ID"] = get_account_id()
 
         # Load Repository CR
@@ -409,6 +487,10 @@ class TestRepository:
         # Check ECR repository lifecycle policy exists
         lifecycle_policy = self.get_lifecycle_policy(ecr_client, resource_name, repo["registryId"])
         assert lifecycle_policy == LIFECYCLE_POLICY_FILTERING_ON_IMAGE_AGE
+        # Check image mutability
+        assert repo["imageTagMutability"] == "MUTABLE_WITH_EXCLUSION"
+        assert len(repo["imageTagMutabilityExclusionFilters"]) == 2
+
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)

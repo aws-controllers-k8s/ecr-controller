@@ -77,6 +77,21 @@ spec:
                   be overwritten. If IMMUTABLE is specified, all image tags within the repository
                   will be immutable which will prevent them from being overwritten.
                 type: string
+              imageTagMutabilityExclusionFilters:
+                description: |-
+                  Creates a repository with a list of filters that define which image tags
+                  can override the default image tag mutability setting.
+                items:
+                  description: |-
+                    Overrides the default image tag mutability setting of the repository for
+                    image tags that match the specified filters.
+                  properties:
+                    filter:
+                      type: string
+                    filterType:
+                      type: string
+                  type: object
+                type: array
               lifecyclePolicy:
                 description: The JSON repository policy text to apply to the repository.
                 type: string
