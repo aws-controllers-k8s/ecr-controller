@@ -376,6 +376,7 @@ class TestRepository:
         replacements = REPLACEMENT_VALUES.copy()
         replacements["REPOSITORY_NAME"] = resource_name
         replacements["IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_1"] = IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_DEV
+        replacements["IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_2"] = IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_STAGING
 
         # Load Repository CR
         resource_data = load_ecr_resource(
@@ -407,16 +408,24 @@ class TestRepository:
         mutability_type = repo["imageTagMutability"]
         exclusion_filters = repo["imageTagMutabilityExclusionFilters"]
         assert mutability_type == "MUTABLE_WITH_EXCLUSION"
-        assert len(exclusion_filters) == 1
+        assert len(exclusion_filters) == 2
         assert exclusion_filters[0]["filterType"] == "WILDCARD"
         assert exclusion_filters[0]["filter"] == "*.dev"
+        assert exclusion_filters[1]["filterType"] == "WILDCARD"
+        assert exclusion_filters[1]["filter"] == "*.staging"
 
         # Remove repository policy
         cr["spec"]["imageTagMutability"] = "IMMUTABLE_WITH_EXCLUSION"
-        cr["spec"]["imageTagMutabilityExclusionFilters"] = [{
+        cr["spec"]["imageTagMutabilityExclusionFilters"] = [
+            {
                 "filterType": "WILDCARD",
-                "filter": "*.staging"
-        }]
+                "filter": "*.prod"
+            },
+            {
+                "filterType": "WILDCARD",
+                "filter": "*.beta"
+            }
+        ]
 
 
         # Patch k8s resource
@@ -429,9 +438,11 @@ class TestRepository:
         mutability_type = repo["imageTagMutability"]
         exclusion_filters = repo["imageTagMutabilityExclusionFilters"]
         assert mutability_type == "IMMUTABLE_WITH_EXCLUSION"
-        assert len(exclusion_filters) == 1
+        assert len(exclusion_filters) == 2
         assert exclusion_filters[0]["filterType"] == "WILDCARD"
-        assert exclusion_filters[0]["filter"] == "*.staging"
+        assert exclusion_filters[0]["filter"] == "*.prod"
+        assert exclusion_filters[1]["filterType"] == "WILDCARD"
+        assert exclusion_filters[1]["filter"] == "*.beta"
 
         # Delete k8s resource
         _, deleted = k8s.delete_custom_resource(ref)

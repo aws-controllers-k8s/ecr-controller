@@ -7,3 +7,4 @@ spec:
   imageTagMutability: MUTABLE_WITH_EXCLUSION
   imageTagMutabilityExclusionFilters:
     - $IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_1
+    - $IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_2
