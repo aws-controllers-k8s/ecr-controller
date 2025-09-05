@@ -97,6 +97,3 @@ resources:
 ignore:
   resource_names:
   - RepositoryCreationTemplate
-  field_paths:
-  - CreateRepositoryInput.ImageTagMutabilityExclusionFilters
-  - CreateRepositoryOutput.Repository.ImageTagMutabilityExclusionFilters

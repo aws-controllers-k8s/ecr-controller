@@ -61,7 +61,7 @@ func (rm *resourceManager) customUpdateRepository(
 			return nil, err
 		}
 	}
-	if delta.DifferentAt("Spec.ImageTagMutability") {
+	if delta.DifferentAt("Spec.ImageTagMutability") || delta.DifferentAt("Spec.ImageTagMutabilityExclusionFilters") {
 		updated, err = rm.updateImageTagMutability(ctx, updated)
 		if err != nil {
 			return nil, err
@@ -143,6 +143,19 @@ func (rm *resourceManager) updateImageTagMutability(
 	} else {
 		input.ImageTagMutability = svcsdktypes.ImageTagMutability(*dspec.ImageTagMutability)
 	}
+
+	if dspec.ImageTagMutabilityExclusionFilters != nil {
+		imageTagMutabilityExclusionFilters := []svcsdktypes.ImageTagMutabilityExclusionFilter{}
+		for _, exclusionFilter := range dspec.ImageTagMutabilityExclusionFilters {
+			imageTagMutabilityExclusionFilters = append(imageTagMutabilityExclusionFilters, svcsdktypes.ImageTagMutabilityExclusionFilter{
+				Filter:     aws.String(*exclusionFilter.Filter),
+				FilterType: svcsdktypes.ImageTagMutabilityExclusionFilterType(*exclusionFilter.FilterType),
+			})
+		}
+
+		input.ImageTagMutabilityExclusionFilters = imageTagMutabilityExclusionFilters
+	}
+
 	_, err = rm.sdkapi.PutImageTagMutability(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutImageTagMutability", err)
 	if err != nil {
