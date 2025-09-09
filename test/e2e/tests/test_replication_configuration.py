@@ -41,22 +41,40 @@ def get_default_destination_region(current_region: str) -> str:
     Returns:
         Default destination region on the opposite coast
     """
+    logging.info(f"Current region for replication: {current_region}")
+    
     # Allow override via environment variable
     env_region = os.getenv('ECR_REPLICATION_DESTINATION_REGION')
     if env_region:
-        return env_region
+        logging.info(f"Using environment override destination region: {env_region}")
+        if env_region == current_region:
+            logging.warning(f"Environment destination region {env_region} is same as current region {current_region}, falling back to default logic")
+        else:
+            return env_region
     
     # Default mappings to opposite coast
     east_coast_regions = ['us-east-1', 'us-east-2']
     west_coast_regions = ['us-west-1', 'us-west-2']
     
+    destination = None
     if current_region in east_coast_regions:
-        return 'us-west-2'
+        destination = 'us-west-2'
     elif current_region in west_coast_regions:
-        return 'us-east-2'
+        destination = 'us-east-2'
     else:
-        # For other regions, default to us-west-2
-        return 'us-west-2'
+        # For other regions, default to us-east-2 to ensure different from us-west-2 default
+        destination = 'us-east-2'
+    
+    # Safety check to ensure destination is different from source
+    if destination == current_region:
+        # Fallback mapping to ensure we never get the same region
+        if current_region == 'us-east-2':
+            destination = 'us-west-2'
+        else:
+            destination = 'us-east-2'
+    
+    logging.info(f"Selected destination region: {destination}")
+    return destination
 
 @service_marker
 @pytest.mark.order("last")  # Run this test class after others to avoid conflicts
@@ -108,6 +126,11 @@ class TestReplicationConfiguration:
         current_region = get_region()
         repository_prefix = "test-repo"
         destination_region = get_default_destination_region(current_region)
+        
+        # Ensure destination is different from source region
+        assert destination_region != current_region, f"Destination region {destination_region} cannot be same as source region {current_region}"
+        
+        logging.info(f"Test setup - Source region: {current_region}, Destination region: {destination_region}")
         
         replacements = REPLACEMENT_VALUES.copy()
         replacements["REPLICATION_CONFIG_NAME"] = resource_name
@@ -179,6 +202,12 @@ class TestReplicationConfiguration:
         initial_region = get_default_destination_region(current_region)
         # For update test, use the opposite of the initial destination
         updated_region = 'us-east-2' if initial_region.startswith('us-west') else 'us-west-2'
+        
+        # Safety check to ensure regions are different from source
+        assert initial_region != current_region, f"Initial region {initial_region} cannot be same as source region {current_region}"
+        assert updated_region != current_region, f"Updated region {updated_region} cannot be same as source region {current_region}"
+        
+        logging.info(f"Update test setup - Source region: {current_region}, Initial destination: {initial_region}, Updated destination: {updated_region}")
         
         replacements = REPLACEMENT_VALUES.copy()
         replacements["REPLICATION_CONFIG_NAME"] = resource_name
@@ -261,6 +290,11 @@ class TestReplicationConfiguration:
         repository_prefix = "test-repo"
         destination_region = get_default_destination_region(current_region)
         
+        # Safety check to ensure destination is different from source
+        assert destination_region != current_region, f"Destination region {destination_region} cannot be same as source region {current_region}"
+        
+        logging.info(f"Delete test setup - Source region: {current_region}, Destination region: {destination_region}")
+        
         replacements = REPLACEMENT_VALUES.copy()
         replacements["REPLICATION_CONFIG_NAME"] = resource_name
         replacements["REGISTRY_ID"] = registry_id
@@ -320,6 +354,12 @@ class TestReplicationConfiguration:
         destination_region1 = get_default_destination_region(current_region)
         # Use the opposite region for the second rule
         destination_region2 = 'us-east-2' if destination_region1.startswith('us-west') else 'us-west-2'
+        
+        # Safety checks to ensure regions are different from source
+        assert destination_region1 != current_region, f"Destination1 region {destination_region1} cannot be same as source region {current_region}"
+        assert destination_region2 != current_region, f"Destination2 region {destination_region2} cannot be same as source region {current_region}"
+        
+        logging.info(f"Multiple rules test setup - Source region: {current_region}, Destination1: {destination_region1}, Destination2: {destination_region2}")
         
         replacements = REPLACEMENT_VALUES.copy()
         replacements["REPLICATION_CONFIG_NAME"] = resource_name
