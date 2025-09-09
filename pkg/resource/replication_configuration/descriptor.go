@@ -54,7 +54,7 @@ func (d *resourceDescriptor) ResourceFromRuntimeObject(obj rtclient.Object) ackt
 // Delta returns an `ackcompare.Delta` object containing the difference between
 // one `AWSResource` and another.
 func (d *resourceDescriptor) Delta(a, b acktypes.AWSResource) *ackcompare.Delta {
-	return nil // Simplified for now
+	return newResourceDelta(a.(*resource), b.(*resource))
 }
 
 // IsManaged returns true if the supplied AWSResource is under the management
