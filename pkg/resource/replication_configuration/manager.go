@@ -82,7 +82,7 @@ func (rm *resourceManager) ReadOne(
 	if resp.ReplicationConfiguration != nil {
 		// For now, just set that we have a replication configuration
 		// The actual mapping will be handled by the hook template
-		ko.Spec.ReplicationConfiguration = &svcapitypes.ReplicationConfiguration{}
+		ko.Spec.ReplicationConfiguration = &svcapitypes.ReplicationConfigurationForRegistry{}
 	}
 
 	return newResource(rm.rr, ko), nil
