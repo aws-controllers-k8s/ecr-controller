@@ -137,6 +137,15 @@ func (rm *resourceManager) Create(
 
 	input := &svcsdk.PutReplicationConfigurationInput{}
 
+	// Debug logging
+	rlog.Info("Create: Processing resource", "name", res.ko.GetName(), "namespace", res.ko.GetNamespace())
+	rlog.Info("Create: ReplicationConfiguration spec", "spec", res.ko.Spec)
+	if res.ko.Spec.ReplicationConfiguration != nil {
+		rlog.Info("Create: Found replication configuration", "rulesCount", len(res.ko.Spec.ReplicationConfiguration.Rules))
+	} else {
+		rlog.Info("Create: No replication configuration in spec")
+	}
+
 	// Convert our API type to AWS SDK type
 	if res.ko.Spec.ReplicationConfiguration != nil {
 		rules := make([]types.ReplicationRule, len(res.ko.Spec.ReplicationConfiguration.Rules))
@@ -172,6 +181,10 @@ func (rm *resourceManager) Create(
 		input.ReplicationConfiguration = &types.ReplicationConfiguration{
 			Rules: rules,
 		}
+		
+		rlog.Info("Create: Sending to AWS", "rulesCount", len(rules))
+	} else {
+		rlog.Info("Create: Sending empty replication configuration to AWS")
 	}
 
 	_, err = rm.sdkapi.PutReplicationConfiguration(ctx, input)
