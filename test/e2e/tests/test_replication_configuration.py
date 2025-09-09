@@ -59,7 +59,37 @@ def get_default_destination_region(current_region: str) -> str:
         return 'us-west-2'
 
 @service_marker
+@pytest.mark.order("last")  # Run this test class after others to avoid conflicts
 class TestReplicationConfiguration:
+
+    def clear_registry_replication_configuration(self, ecr_client):
+        """Clear the registry replication configuration to ensure clean test state."""
+        try:
+            # Clear replication configuration by setting empty rules
+            ecr_client.put_replication_configuration(
+                replicationConfiguration={'rules': []}
+            )
+            logging.info("Cleared registry replication configuration")
+        except Exception as e:
+            logging.warning(f"Failed to clear replication configuration: {e}")
+
+    def setup_method(self, method):
+        """Setup before each test method."""
+        # Clear any existing replication configuration before each test
+        import boto3
+        ecr_client = boto3.client("ecr")
+        self.clear_registry_replication_configuration(ecr_client)
+        # Wait a bit for the clear operation to propagate
+        time.sleep(5)
+
+    def teardown_method(self, method):
+        """Teardown after each test method."""
+        # Clear replication configuration after each test to ensure clean state
+        import boto3
+        ecr_client = boto3.client("ecr")
+        self.clear_registry_replication_configuration(ecr_client)
+        # Wait a bit for the clear operation to propagate
+        time.sleep(5)
 
     def get_registry_replication_configuration(self, ecr_client) -> Optional[dict]:
         """Get the current replication configuration for the registry."""
@@ -70,6 +100,7 @@ class TestReplicationConfiguration:
             logging.error(f"Failed to get replication configuration: {e}")
             return None
 
+    @pytest.mark.order(1)
     def test_create_replication_configuration(self, ecr_client):
         """Test creating a registry-level replication configuration."""
         resource_name = random_suffix_name("replication-config", 24)
@@ -138,6 +169,7 @@ class TestReplicationConfiguration:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
+    @pytest.mark.order(2)
     def test_update_replication_configuration(self, ecr_client):
         """Test updating a registry-level replication configuration."""
         resource_name = random_suffix_name("replication-config", 24)
@@ -220,6 +252,7 @@ class TestReplicationConfiguration:
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
+    @pytest.mark.order(3)
     def test_delete_replication_configuration(self, ecr_client):
         """Test deleting a registry-level replication configuration."""
         resource_name = random_suffix_name("replication-config", 24)
@@ -278,6 +311,7 @@ class TestReplicationConfiguration:
                                   filter_item.get('filterType') == 'PREFIX_MATCH'), \
                                "Replication rule still exists after deletion"
 
+    @pytest.mark.order(4)
     def test_multiple_replication_rules(self, ecr_client):
         """Test creating a replication configuration with multiple rules."""
         resource_name = random_suffix_name("replication-config", 24)
