@@ -122,7 +122,7 @@ type Recommendation struct {
 
 // An array of objects representing the destination for a replication rule.
 type ReplicationDestination struct {
-	RegistryID *string `json:"registryID,omitempty"`
+	RegistryID *string `json:"registryId,omitempty"`
 	Region     *string `json:"region,omitempty"`
 }
 

@@ -3,7 +3,7 @@ kind: ReplicationConfiguration
 metadata:
   name: $REPLICATION_CONFIG_NAME
 spec:
-  registryID: '$REGISTRY_ID'
+  registryId: '$REGISTRY_ID'
   replicationConfiguration:
     rules:
     - destinations:
