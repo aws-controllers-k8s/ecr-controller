@@ -73,6 +73,7 @@ rules:
   - ecr.services.k8s.aws
   resources:
   - pullthroughcacherules
+  - replicationconfigurations
   - repositories
   verbs:
   - create
@@ -86,6 +87,7 @@ rules:
   - ecr.services.k8s.aws
   resources:
   - pullthroughcacherules/status
+  - replicationconfigurations/status
   - repositories/status
   verbs:
   - get

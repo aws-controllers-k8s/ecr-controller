@@ -1,0 +1,8 @@
+apiVersion: ecr.services.k8s.aws/v1alpha1
+kind: ReplicationConfiguration
+metadata:
+  name: registry-replication-config
+  namespace: default
+spec:
+  registryID: "123456789012"  # Optional - defaults to current AWS account
+  replicationConfiguration: {}  # Will be populated via hooks in real implementation
