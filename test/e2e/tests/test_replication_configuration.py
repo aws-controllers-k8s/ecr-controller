@@ -214,7 +214,7 @@ class TestReplicationConfiguration:
                     "rules": [{
                         "destinations": [{
                             "region": updated_region,
-                            "registryId": registry_id
+                            "registryID": registry_id
                         }],
                         "repositoryFilters": [{
                             "filter": repository_prefix,
@@ -336,7 +336,7 @@ class TestReplicationConfiguration:
                     "rules": [
                         {
                             "destinations": [
-                                {"region": destination_region1, "registryId": registry_id}
+                                {"region": destination_region1, "registryID": registry_id}
                             ],
                             "repositoryFilters": [
                                 {"filter": "prod-", "filterType": "PREFIX_MATCH"}
@@ -344,7 +344,7 @@ class TestReplicationConfiguration:
                         },
                         {
                             "destinations": [
-                                {"region": destination_region2, "registryId": registry_id}
+                                {"region": destination_region2, "registryID": registry_id}
                             ],
                             "repositoryFilters": [
                                 {"filter": "test-", "filterType": "PREFIX_MATCH"}

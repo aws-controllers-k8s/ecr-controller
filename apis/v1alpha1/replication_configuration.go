@@ -54,7 +54,7 @@ type ReplicationConfigurationSpec struct {
 	// assumed.
 	//
 	// Regex Pattern: `^[0-9]{12}$`
-	RegistryID *string `json:"registryId,omitempty"`
+	RegistryID *string `json:"registryID,omitempty"`
 }
 
 // ReplicationConfigurationStatus defines the observed state of ReplicationConfiguration

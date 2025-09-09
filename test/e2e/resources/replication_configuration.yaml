@@ -3,12 +3,12 @@ kind: ReplicationConfiguration
 metadata:
   name: $REPLICATION_CONFIG_NAME
 spec:
-  registryId: '$REGISTRY_ID'
+  registryID: '$REGISTRY_ID'
   replicationConfiguration:
     rules:
     - destinations:
       - region: $DESTINATION_REGION
-        registryId: '$REGISTRY_ID'
+        registryID: '$REGISTRY_ID'
       repositoryFilters:
       - filter: $REPOSITORY_PREFIX
         filterType: PREFIX_MATCH

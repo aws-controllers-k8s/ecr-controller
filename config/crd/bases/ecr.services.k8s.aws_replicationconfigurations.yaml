@@ -15,7 +15,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.registryId
+    - jsonPath: .spec.registryID
       name: REGISTRY-ID
       type: string
     - jsonPath: .status.conditions[?(@.type=="ACK.ResourceSynced")].status
@@ -50,7 +50,7 @@ spec:
 
               An object representing the replication configuration for an ECR registry.
             properties:
-              registryId:
+              registryID:
                 description: |-
                   The Amazon Web Services account ID associated with the registry to configure
                   replication for. If you do not specify a registry, the default registry is
@@ -75,7 +75,7 @@ spec:
                             description: An array of objects representing the destination
                               for a replication rule.
                             properties:
-                              registryId:
+                              registryID:
                                 description: The Amazon Web Services account ID of the registry to replicate to.
                                 type: string
                               region:
