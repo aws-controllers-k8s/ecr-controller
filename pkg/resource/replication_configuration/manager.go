@@ -21,6 +21,7 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -82,7 +83,7 @@ func (rm *resourceManager) ReadOne(
 
 	// Create a new resource with the response data
 	ko := res.ko.DeepCopy()
-	if resp.ReplicationConfiguration != nil {
+	if resp.ReplicationConfiguration != nil && len(resp.ReplicationConfiguration.Rules) > 0 {
 		rlog.Info("ReadOne: Found AWS replication config", "rulesCount", len(resp.ReplicationConfiguration.Rules))
 		// Convert AWS SDK type to our API type
 		rules := make([]*svcapitypes.ReplicationRule, len(resp.ReplicationConfiguration.Rules))
@@ -121,9 +122,16 @@ func (rm *resourceManager) ReadOne(
 		}
 		rlog.Info("ReadOne: Returning resource with rules", "rulesCount", len(rules))
 	} else {
-		// If there's no replication configuration, set to nil
-		ko.Spec.ReplicationConfiguration = nil
-		rlog.Info("ReadOne: Returning resource with no replication configuration")
+		// If there's no replication configuration or it's empty, treat as non-existent
+		// This allows the controller to manage the singleton resource
+		if resp.ReplicationConfiguration != nil {
+			rlog.Info("ReadOne: Found empty AWS replication config, treating as non-existent for adoption")
+		} else {
+			rlog.Info("ReadOne: No replication configuration in AWS")
+		}
+		
+		// Return a "not found" error to trigger Create instead of adoption
+		return nil, ackerr.NotFound
 	}
 
 	return newResource(rm.rr, ko), nil
@@ -318,7 +326,17 @@ func (rm *resourceManager) FilterSystemTags(
 
 // IsSynced returns true if the resource is synced
 func (rm *resourceManager) IsSynced(ctx context.Context, r acktypes.AWSResource) (bool, error) {
-	return true, nil // Simplified implementation
+	res := r.(*resource)
+	
+	// For ReplicationConfiguration, always return false to force management
+	// This is a singleton resource that we should always manage
+	if res.ko.Spec.ReplicationConfiguration == nil {
+		// If we don't have a desired spec, we're synced
+		return true, nil
+	}
+	
+	// If we have a desired configuration, we're not synced (force reconciliation)
+	return false, nil
 }
 
 // ResolveReferences resolves references in the resource
