@@ -200,8 +200,21 @@ class TestReplicationConfiguration:
         current_region = get_region()
         repository_prefix = "test-repo"
         initial_region = get_default_destination_region(current_region)
-        # For update test, use the opposite of the initial destination
-        updated_region = 'us-east-2' if initial_region.startswith('us-west') else 'us-west-2'
+        # For update test, use a different region from both source and initial destination
+        # Map regions to ensure three different regions: source, initial destination, updated destination
+        region_alternatives = {
+            'us-west-2': 'us-east-1',
+            'us-west-1': 'us-east-1', 
+            'us-east-2': 'us-west-1',
+            'us-east-1': 'us-west-1'
+        }
+        
+        # Get updated region that's different from both current and initial
+        updated_region = region_alternatives.get(current_region, 'us-east-1')
+        
+        # If updated region equals initial region, use alternative
+        if updated_region == initial_region:
+            updated_region = 'us-west-1' if initial_region != 'us-west-1' else 'us-east-1'
         
         # Safety check to ensure regions are different from source
         assert initial_region != current_region, f"Initial region {initial_region} cannot be same as source region {current_region}"
@@ -352,8 +365,20 @@ class TestReplicationConfiguration:
         registry_id = get_account_id()
         current_region = get_region()
         destination_region1 = get_default_destination_region(current_region)
-        # Use the opposite region for the second rule
-        destination_region2 = 'us-east-2' if destination_region1.startswith('us-west') else 'us-west-2'
+        # Use different regions for the two rules, ensuring all three are different
+        region_alternatives = {
+            'us-west-2': 'us-east-2',
+            'us-west-1': 'us-east-1', 
+            'us-east-2': 'us-west-2',
+            'us-east-1': 'us-west-1'
+        }
+        
+        # Get second destination that's different from both current and first destination
+        destination_region2 = region_alternatives.get(current_region, 'us-east-1')
+        
+        # If second destination equals first destination, use alternative
+        if destination_region2 == destination_region1:
+            destination_region2 = 'us-west-1' if destination_region1 != 'us-west-1' else 'us-east-1'
         
         # Safety checks to ensure regions are different from source
         assert destination_region1 != current_region, f"Destination1 region {destination_region1} cannot be same as source region {current_region}"
