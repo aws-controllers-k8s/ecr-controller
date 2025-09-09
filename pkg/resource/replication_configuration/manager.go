@@ -80,9 +80,44 @@ func (rm *resourceManager) ReadOne(
 	// Create a new resource with the response data
 	ko := res.ko.DeepCopy()
 	if resp.ReplicationConfiguration != nil {
-		// For now, just set that we have a replication configuration
-		// The actual mapping will be handled by the hook template
-		ko.Spec.ReplicationConfiguration = &svcapitypes.ReplicationConfigurationForRegistry{}
+		// Convert AWS SDK type to our API type
+		rules := make([]*svcapitypes.ReplicationRule, len(resp.ReplicationConfiguration.Rules))
+		
+		for i, awsRule := range resp.ReplicationConfiguration.Rules {
+			// Convert destinations
+			destinations := make([]*svcapitypes.ReplicationDestination, len(awsRule.Destinations))
+			for j, awsDest := range awsRule.Destinations {
+				destinations[j] = &svcapitypes.ReplicationDestination{
+					RegistryID: awsDest.RegistryId,
+					Region:     awsDest.Region,
+				}
+			}
+			
+			// Convert repository filters
+			var repositoryFilters []*svcapitypes.RepositoryFilter
+			if awsRule.RepositoryFilters != nil {
+				repositoryFilters = make([]*svcapitypes.RepositoryFilter, len(awsRule.RepositoryFilters))
+				for k, awsFilter := range awsRule.RepositoryFilters {
+					filterType := string(awsFilter.FilterType)
+					repositoryFilters[k] = &svcapitypes.RepositoryFilter{
+						Filter:     awsFilter.Filter,
+						FilterType: &filterType,
+					}
+				}
+			}
+			
+			rules[i] = &svcapitypes.ReplicationRule{
+				Destinations:      destinations,
+				RepositoryFilters: repositoryFilters,
+			}
+		}
+		
+		ko.Spec.ReplicationConfiguration = &svcapitypes.ReplicationConfigurationForRegistry{
+			Rules: rules,
+		}
+	} else {
+		// If there's no replication configuration, set to nil
+		ko.Spec.ReplicationConfiguration = nil
 	}
 
 	return newResource(rm.rr, ko), nil
@@ -104,9 +139,38 @@ func (rm *resourceManager) Create(
 
 	// Convert our API type to AWS SDK type
 	if res.ko.Spec.ReplicationConfiguration != nil {
-		// For now, create empty rules - will be enhanced with hook templates
+		rules := make([]types.ReplicationRule, len(res.ko.Spec.ReplicationConfiguration.Rules))
+		
+		for i, rule := range res.ko.Spec.ReplicationConfiguration.Rules {
+			// Convert destinations
+			destinations := make([]types.ReplicationDestination, len(rule.Destinations))
+			for j, dest := range rule.Destinations {
+				destinations[j] = types.ReplicationDestination{
+					RegistryId: dest.RegistryID,
+					Region:     dest.Region,
+				}
+			}
+			
+			// Convert repository filters
+			var repositoryFilters []types.RepositoryFilter
+			if rule.RepositoryFilters != nil {
+				repositoryFilters = make([]types.RepositoryFilter, len(rule.RepositoryFilters))
+				for k, filter := range rule.RepositoryFilters {
+					repositoryFilters[k] = types.RepositoryFilter{
+						Filter:     filter.Filter,
+						FilterType: types.RepositoryFilterType(*filter.FilterType),
+					}
+				}
+			}
+			
+			rules[i] = types.ReplicationRule{
+				Destinations:      destinations,
+				RepositoryFilters: repositoryFilters,
+			}
+		}
+		
 		input.ReplicationConfiguration = &types.ReplicationConfiguration{
-			Rules: []types.ReplicationRule{},
+			Rules: rules,
 		}
 	}
 
