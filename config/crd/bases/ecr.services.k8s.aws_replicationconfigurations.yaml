@@ -76,6 +76,10 @@ spec:
                               for a replication rule.
                             properties:
                               registryID:
+                                description: The Amazon Web Services account ID of the registry to replicate to.
+                                type: string
+                              region:
+                                description: The Region to replicate to.
                                 type: string
                             type: object
                           type: array
