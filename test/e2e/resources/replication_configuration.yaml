@@ -1,0 +1,14 @@
+apiVersion: ecr.services.k8s.aws/v1alpha1
+kind: ReplicationConfiguration
+metadata:
+  name: $REPLICATION_CONFIG_NAME
+spec:
+  registryID: '$REGISTRY_ID'
+  replicationConfiguration:
+    rules:
+    - destinations:
+      - region: $DESTINATION_REGION
+        registryId: '$REGISTRY_ID'
+      repositoryFilters:
+      - filter: $REPOSITORY_PREFIX
+        filterType: PREFIX_MATCH
