@@ -74,12 +74,16 @@ func (rm *resourceManager) ReadOne(
 	resp, err := rm.sdkapi.DescribeRegistry(ctx, input)
 	rm.metrics.RecordAPICall("READ_ONE", "DescribeRegistry", err)
 	if err != nil {
+		rlog.Info("ReadOne: DescribeRegistry failed", "error", err)
 		return nil, err
 	}
+
+	rlog.Info("ReadOne: DescribeRegistry succeeded")
 
 	// Create a new resource with the response data
 	ko := res.ko.DeepCopy()
 	if resp.ReplicationConfiguration != nil {
+		rlog.Info("ReadOne: Found AWS replication config", "rulesCount", len(resp.ReplicationConfiguration.Rules))
 		// Convert AWS SDK type to our API type
 		rules := make([]*svcapitypes.ReplicationRule, len(resp.ReplicationConfiguration.Rules))
 		
@@ -115,9 +119,11 @@ func (rm *resourceManager) ReadOne(
 		ko.Spec.ReplicationConfiguration = &svcapitypes.ReplicationConfigurationForRegistry{
 			Rules: rules,
 		}
+		rlog.Info("ReadOne: Returning resource with rules", "rulesCount", len(rules))
 	} else {
 		// If there's no replication configuration, set to nil
 		ko.Spec.ReplicationConfiguration = nil
+		rlog.Info("ReadOne: Returning resource with no replication configuration")
 	}
 
 	return newResource(rm.rr, ko), nil
@@ -137,11 +143,31 @@ func (rm *resourceManager) Create(
 
 	input := &svcsdk.PutReplicationConfigurationInput{}
 
-	// Debug logging
+	// Debug logging - check current AWS state before modification
 	rlog.Info("Create: Processing resource", "name", res.ko.GetName(), "namespace", res.ko.GetNamespace())
+	
+	// First, check what's currently in AWS
+	currentResp, currentErr := rm.sdkapi.DescribeRegistry(ctx, &svcsdk.DescribeRegistryInput{})
+	if currentErr != nil {
+		rlog.Info("Create: Failed to describe current registry state", "error", currentErr)
+	} else {
+		if currentResp.ReplicationConfiguration != nil {
+			rlog.Info("Create: Current AWS replication config", "currentRulesCount", len(currentResp.ReplicationConfiguration.Rules))
+			for i, rule := range currentResp.ReplicationConfiguration.Rules {
+				rlog.Info("Create: Current AWS rule", "ruleIndex", i, "destinationsCount", len(rule.Destinations), "filtersCount", len(rule.RepositoryFilters))
+			}
+		} else {
+			rlog.Info("Create: No current replication configuration in AWS")
+		}
+	}
+	
+	// Debug our desired state
 	rlog.Info("Create: ReplicationConfiguration spec", "spec", res.ko.Spec)
 	if res.ko.Spec.ReplicationConfiguration != nil {
 		rlog.Info("Create: Found replication configuration", "rulesCount", len(res.ko.Spec.ReplicationConfiguration.Rules))
+		for i, rule := range res.ko.Spec.ReplicationConfiguration.Rules {
+			rlog.Info("Create: Desired rule", "ruleIndex", i, "destinationsCount", len(rule.Destinations), "filtersCount", len(rule.RepositoryFilters))
+		}
 	} else {
 		rlog.Info("Create: No replication configuration in spec")
 	}
@@ -190,7 +216,25 @@ func (rm *resourceManager) Create(
 	_, err = rm.sdkapi.PutReplicationConfiguration(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "PutReplicationConfiguration", err)
 	if err != nil {
+		rlog.Info("Create: PutReplicationConfiguration failed", "error", err)
 		return nil, err
+	}
+	
+	rlog.Info("Create: PutReplicationConfiguration succeeded")
+
+	// Check AWS state immediately after our call
+	afterResp, afterErr := rm.sdkapi.DescribeRegistry(ctx, &svcsdk.DescribeRegistryInput{})
+	if afterErr != nil {
+		rlog.Info("Create: Failed to describe registry state after PUT", "error", afterErr)
+	} else {
+		if afterResp.ReplicationConfiguration != nil {
+			rlog.Info("Create: AWS replication config after PUT", "rulesCount", len(afterResp.ReplicationConfiguration.Rules))
+			for i, rule := range afterResp.ReplicationConfiguration.Rules {
+				rlog.Info("Create: AWS rule after PUT", "ruleIndex", i, "destinationsCount", len(rule.Destinations), "filtersCount", len(rule.RepositoryFilters))
+			}
+		} else {
+			rlog.Info("Create: No replication configuration in AWS after PUT")
+		}
 	}
 
 	// Read back the created resource
