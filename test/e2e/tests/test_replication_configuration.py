@@ -176,7 +176,46 @@ class TestReplicationConfiguration:
         
         logging.info(f"Create test - Source region: {current_region}, Destination region: {destination_region}")
         
-        # Verify AWS starts clean (no replication configuration should exist)
+        # Clean up any existing Kubernetes ReplicationConfiguration resources
+        try:
+            from kubernetes import client as k8s_client
+            custom_api = k8s_client.CustomObjectsApi()
+            existing_resources = custom_api.list_namespaced_custom_object(
+                group=CRD_GROUP,
+                version=CRD_VERSION,
+                namespace="default",
+                plural=RESOURCE_PLURAL
+            )
+            
+            for item in existing_resources.get('items', []):
+                resource_name = item['metadata']['name']
+                logging.info(f"Deleting existing K8s ReplicationConfiguration: {resource_name}")
+                try:
+                    custom_api.delete_namespaced_custom_object(
+                        group=CRD_GROUP,
+                        version=CRD_VERSION,
+                        namespace="default",
+                        plural=RESOURCE_PLURAL,
+                        name=resource_name
+                    )
+                except Exception as e:
+                    logging.warning(f"Failed to delete {resource_name}: {e}")
+            
+            # Wait for cleanup to complete
+            time.sleep(10)
+            logging.info("Completed K8s ReplicationConfiguration cleanup")
+        except Exception as e:
+            logging.info(f"K8s cleanup failed (might be no resources): {e}")
+        
+        # Clean up any existing AWS replication configuration 
+        try:
+            ecr_client.put_replication_configuration(replicationConfiguration={'rules': []})
+            logging.info("Cleared existing AWS replication configuration")
+            time.sleep(5)  # Give time for AWS change to propagate
+        except Exception as e:
+            logging.info(f"AWS cleanup failed (might not exist): {e}")
+        
+        # Verify both AWS and K8s are clean
         initial_config = self.get_registry_replication_configuration(ecr_client)
         assert initial_config is None or len(initial_config.get('rules', [])) == 0, "AWS should start with no replication configuration"
         
