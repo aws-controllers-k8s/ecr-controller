@@ -77,8 +77,10 @@ def get_default_destination_region(current_region: str) -> str:
     return destination
 
 @service_marker
-@pytest.mark.order("last")  # Run this test class after others to avoid conflicts
 class TestReplicationConfiguration:
+    
+    # Class-level shared resource for singleton behavior
+    _shared_resource_ref = None
 
     def clear_registry_replication_configuration(self, ecr_client):
         """Clear the registry replication configuration to ensure clean test state."""
@@ -91,23 +93,28 @@ class TestReplicationConfiguration:
         except Exception as e:
             logging.warning(f"Failed to clear replication configuration: {e}")
 
-    def get_or_create_shared_resource(self, registry_id, current_region, repository_prefix, destination_region):
-        """Get existing shared resource or create it if it doesn't exist."""
-        # Use a deterministic name for the shared resource
-        shared_resource_name = "replication-config-shared"
-        shared_resource_ref = k8s.CustomResourceReference(
+    @classmethod
+    def setup_class(cls):
+        """Setup before the entire test class - create the singleton resource once."""
+        # Clear any existing replication configuration before the class
+        import boto3
+        ecr_client = boto3.client("ecr")
+        test_instance = cls()
+        test_instance.clear_registry_replication_configuration(ecr_client)
+        time.sleep(2)
+        
+        # Create the singleton resource that will be shared across all tests
+        registry_id = get_account_id()
+        current_region = get_region()
+        repository_prefix = "test-repo"
+        destination_region = get_default_destination_region(current_region)
+        
+        shared_resource_name = random_suffix_name("replication-config", 24)
+        cls._shared_resource_ref = k8s.CustomResourceReference(
             CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
             shared_resource_name, namespace="default",
         )
         
-        # Check if resource already exists
-        if k8s.get_resource_exists(shared_resource_ref):
-            logging.info(f"Found existing shared resource: {shared_resource_name}")
-            return shared_resource_ref
-            
-        logging.info(f"Creating new shared resource: {shared_resource_name}")
-        
-        # Create the resource
         replacements = REPLACEMENT_VALUES.copy()
         replacements["REPLICATION_CONFIG_NAME"] = shared_resource_name
         replacements["REGISTRY_ID"] = registry_id
@@ -119,30 +126,29 @@ class TestReplicationConfiguration:
             additional_replacements=replacements,
         )
         
-        k8s.create_custom_resource(shared_resource_ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(shared_resource_ref)
+        k8s.create_custom_resource(cls._shared_resource_ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(cls._shared_resource_ref)
         assert cr is not None
-        
-        return shared_resource_ref
+        logging.info(f"Created shared singleton resource: {shared_resource_name}")
 
-    def setup_method(self, method):
-        """Setup before each test method."""
-        # Clear any existing replication configuration before each test
+    @classmethod 
+    def teardown_class(cls):
+        """Cleanup after the entire test class."""
         import boto3
         ecr_client = boto3.client("ecr")
-        self.clear_registry_replication_configuration(ecr_client)
-        # Wait a bit for the clear operation to propagate
+        test_instance = cls()
+        
+        # Clean up the shared resource if it still exists
+        if cls._shared_resource_ref and k8s.get_resource_exists(cls._shared_resource_ref):
+            try:
+                k8s.delete_custom_resource(cls._shared_resource_ref)
+                time.sleep(DELETE_WAIT_AFTER_SECONDS)
+            except Exception as e:
+                logging.warning(f"Failed to delete shared resource: {e}")
+        
+        # Clear replication configuration after the entire test class
+        test_instance.clear_registry_replication_configuration(ecr_client)
         time.sleep(2)
-
-    def teardown_method(self, method):
-        """Teardown after each test method."""
-        # Only clear if this is the delete test or multiple rules test
-        if method.__name__ in ['test_delete_replication_configuration', 'test_multiple_replication_rules']:
-            import boto3
-            ecr_client = boto3.client("ecr")
-            self.clear_registry_replication_configuration(ecr_client)
-            # Wait a bit for the clear operation to propagate
-            time.sleep(2)
 
     def get_registry_replication_configuration(self, ecr_client) -> Optional[dict]:
         """Get the current replication configuration for the registry."""
@@ -153,9 +159,8 @@ class TestReplicationConfiguration:
             logging.error(f"Failed to get replication configuration: {e}")
             return None
 
-    @pytest.mark.order(1)
-    def test_create_replication_configuration(self, ecr_client):
-        """Test creating a registry-level replication configuration."""
+    def test_a_create_replication_configuration(self, ecr_client):
+        """Test verifying the created registry-level replication configuration."""
         registry_id = get_account_id()
         current_region = get_region()
         repository_prefix = "test-repo"
@@ -166,10 +171,10 @@ class TestReplicationConfiguration:
         
         logging.info(f"Test setup - Source region: {current_region}, Destination region: {destination_region}")
         
-        # Get or create the shared resource
-        shared_resource_ref = self.get_or_create_shared_resource(registry_id, current_region, repository_prefix, destination_region)
+        # Verify the shared resource exists (created in setup_class)
+        assert self._shared_resource_ref is not None, "Shared resource should be created in setup_class"
+        assert k8s.get_resource_exists(self._shared_resource_ref), "Shared resource should exist"
         
-        assert k8s.get_resource_exists(shared_resource_ref)
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check replication configuration was created in AWS
@@ -197,12 +202,11 @@ class TestReplicationConfiguration:
         assert found_rule, "Replication rule not found in AWS registry"
 
         # Verify the Kubernetes resource status
-        cr = k8s.get_resource(shared_resource_ref)
+        cr = k8s.get_resource(self._shared_resource_ref)
         assert cr is not None
         assert 'status' in cr
 
-    @pytest.mark.order(2)
-    def test_update_replication_configuration(self, ecr_client):
+    def test_b_update_replication_configuration(self, ecr_client):
         """Test updating a registry-level replication configuration."""
         registry_id = get_account_id()
         current_region = get_region()
@@ -230,8 +234,9 @@ class TestReplicationConfiguration:
         
         logging.info(f"Update test setup - Source region: {current_region}, Initial destination: {initial_region}, Updated destination: {updated_region}")
         
-        # Get or create the shared resource (should exist from create test, but handle gracefully)
-        shared_resource_ref = self.get_or_create_shared_resource(registry_id, current_region, repository_prefix, initial_region)
+        # Use the shared resource from class setup
+        assert self._shared_resource_ref is not None, "Shared resource should be created in setup_class"
+        assert k8s.get_resource_exists(self._shared_resource_ref), "Shared resource should exist from create test"
 
         # Verify initial state
         replication_config = self.get_registry_replication_configuration(ecr_client)
@@ -255,7 +260,7 @@ class TestReplicationConfiguration:
                 }
             }
         }
-        k8s.patch_custom_resource(shared_resource_ref, updates)
+        k8s.patch_custom_resource(self._shared_resource_ref, updates)
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
 
         # Check updated replication configuration
@@ -277,8 +282,7 @@ class TestReplicationConfiguration:
         
         assert found_updated_rule, "Updated replication rule not found"
 
-    @pytest.mark.order(3)
-    def test_delete_replication_configuration(self, ecr_client):
+    def test_z_delete_replication_configuration(self, ecr_client):
         """Test deleting a registry-level replication configuration."""
         registry_id = get_account_id()
         current_region = get_region()
@@ -290,16 +294,9 @@ class TestReplicationConfiguration:
         
         logging.info(f"Delete test setup - Source region: {current_region}, Destination region: {destination_region}")
         
-        # Get the shared resource reference
-        shared_resource_name = "replication-config-shared"
-        shared_resource_ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            shared_resource_name, namespace="default",
-        )
-
-        # Check if shared resource exists, if not create it to test deletion
-        if not k8s.get_resource_exists(shared_resource_ref):
-            shared_resource_ref = self.get_or_create_shared_resource(registry_id, current_region, repository_prefix, destination_region)
+        # Use the shared resource from class setup
+        assert self._shared_resource_ref is not None, "Shared resource should be created in setup_class"
+        assert k8s.get_resource_exists(self._shared_resource_ref), "Shared resource should exist from previous tests"
 
         # Verify replication was created
         replication_config = self.get_registry_replication_configuration(ecr_client)
@@ -308,13 +305,13 @@ class TestReplicationConfiguration:
         assert initial_rules_count > 0
 
         # Delete the k8s resource
-        _, deleted = k8s.delete_custom_resource(shared_resource_ref)
+        _, deleted = k8s.delete_custom_resource(self._shared_resource_ref)
         assert deleted
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
         # Verify the resource no longer exists in Kubernetes
-        assert not k8s.get_resource_exists(shared_resource_ref)
+        assert not k8s.get_resource_exists(self._shared_resource_ref)
 
         # Verify replication configuration was cleaned up in AWS
         # Note: The registry replication configuration should be empty or not contain our rule
@@ -328,8 +325,10 @@ class TestReplicationConfiguration:
                         assert not (filter_item.get('filter') == repository_prefix and 
                                   filter_item.get('filterType') == 'PREFIX_MATCH'), \
                                "Replication rule still exists after deletion"
+        
+        # Clear the class reference since we deleted the resource
+        self.__class__._shared_resource_ref = None
 
-    @pytest.mark.order(4)
     def test_multiple_replication_rules(self, ecr_client):
         """Test creating a replication configuration with multiple rules.
         
