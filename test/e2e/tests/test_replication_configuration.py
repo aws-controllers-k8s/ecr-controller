@@ -165,7 +165,7 @@ class TestReplicationConfiguration:
             return None
 
     def test_a_create_replication_configuration(self, ecr_client):
-        """Test creating a registry-level replication configuration."""
+        """Test creating a registry-level replication configuration from scratch."""
         registry_id = get_account_id()
         current_region = get_region()
         repository_prefix = "test-repo"
@@ -174,11 +174,38 @@ class TestReplicationConfiguration:
         # Ensure destination is different from source region
         assert destination_region != current_region, f"Destination region {destination_region} cannot be same as source region {current_region}"
         
-        logging.info(f"Test setup - Source region: {current_region}, Destination region: {destination_region}")
+        logging.info(f"Create test - Source region: {current_region}, Destination region: {destination_region}")
         
-        # Get or create the singleton resource
-        singleton_ref = self.get_or_create_singleton_resource()
-        assert k8s.get_resource_exists(singleton_ref), "Singleton resource should exist"
+        # Verify AWS starts clean (no replication configuration should exist)
+        initial_config = self.get_registry_replication_configuration(ecr_client)
+        assert initial_config is None or len(initial_config.get('rules', [])) == 0, "AWS should start with no replication configuration"
+        
+        # Create a new singleton resource to test creation
+        resource_name = random_suffix_name("replication-create", 24)
+        resource_ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+        
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["REPLICATION_CONFIG_NAME"] = resource_name
+        replacements["REGISTRY_ID"] = registry_id
+        replacements["REPOSITORY_PREFIX"] = repository_prefix
+        replacements["DESTINATION_REGION"] = destination_region
+
+        resource_data = load_ecr_resource(
+            "replication_configuration",
+            additional_replacements=replacements,
+        )
+        
+        # Create the Kubernetes resource
+        k8s.create_custom_resource(resource_ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(resource_ref)
+        assert cr is not None
+        assert k8s.get_resource_exists(resource_ref), "Resource should exist after creation"
+        
+        # Wait for AWS propagation
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
 
         # Check replication configuration was created in AWS
         replication_config = self.get_registry_replication_configuration(ecr_client)
@@ -205,9 +232,13 @@ class TestReplicationConfiguration:
         assert found_rule, "Replication rule not found in AWS registry"
 
         # Verify the Kubernetes resource status
-        cr = k8s.get_resource(singleton_ref)
+        cr = k8s.get_resource(resource_ref)
         assert cr is not None
         assert 'status' in cr
+        
+        # Clean up the resource we created for this test
+        k8s.delete_custom_resource(resource_ref)
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
     def test_b_update_replication_configuration(self, ecr_client):
         """Test updating a registry-level replication configuration."""
