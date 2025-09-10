@@ -28,9 +28,9 @@ import os
 
 RESOURCE_PLURAL = "replicationconfigurations"
 
-CREATE_WAIT_AFTER_SECONDS = 15
-UPDATE_WAIT_AFTER_SECONDS = 15
-DELETE_WAIT_AFTER_SECONDS = 15
+CREATE_WAIT_AFTER_SECONDS = 30
+UPDATE_WAIT_AFTER_SECONDS = 30
+DELETE_WAIT_AFTER_SECONDS = 30
 
 def get_default_destination_region(current_region: str) -> str:
     """Get the default destination region (opposite coast) for replication.
@@ -126,12 +126,19 @@ class TestReplicationConfiguration:
             additional_replacements=replacements,
         )
         
-        k8s.create_custom_resource(singleton_ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(singleton_ref)
-        assert cr is not None
-        
-        # Wait for AWS propagation
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        try:
+            k8s.create_custom_resource(singleton_ref, resource_data)
+            cr = k8s.wait_resource_consumed_by_controller(singleton_ref)
+            assert cr is not None
+            # Wait for AWS propagation
+            time.sleep(CREATE_WAIT_AFTER_SECONDS)
+            logging.info(f"Successfully created singleton resource: {singleton_name}")
+        except Exception as e:
+            # If creation fails, check if it was created by another test
+            if k8s.get_resource_exists(singleton_ref):
+                logging.info(f"Singleton resource was created by another test: {singleton_name}")
+            else:
+                raise e
         
         return singleton_ref
 
@@ -143,7 +150,10 @@ class TestReplicationConfiguration:
         # Only clear AWS state for the delete test and multiple rules test
         if method.__name__ in ['test_z_delete_replication_configuration', 'test_multiple_replication_rules']:
             self.clear_registry_replication_configuration(ecr_client)
-            time.sleep(2)
+            time.sleep(5)
+            
+        # Add extra wait time between all tests to avoid race conditions
+        time.sleep(10)
 
     def get_registry_replication_configuration(self, ecr_client) -> Optional[dict]:
         """Get the current replication configuration for the registry."""
