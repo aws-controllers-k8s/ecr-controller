@@ -215,9 +215,14 @@ class TestReplicationConfiguration:
         
         # Find our rule
         found_rule = False
-        for rule in replication_config['rules']:
+        logging.info(f"Looking for rule with prefix: {repository_prefix}, filterType: PREFIX_MATCH")
+        logging.info(f"AWS returned {len(replication_config['rules'])} rules")
+        
+        for i, rule in enumerate(replication_config['rules']):
+            logging.info(f"Rule {i}: {rule}")
             if 'repositoryFilters' in rule:
-                for filter_item in rule['repositoryFilters']:
+                for j, filter_item in enumerate(rule['repositoryFilters']):
+                    logging.info(f"Filter {j}: {filter_item}")
                     if (filter_item.get('filter') == repository_prefix and 
                         filter_item.get('filterType') == 'PREFIX_MATCH'):
                         found_rule = True
