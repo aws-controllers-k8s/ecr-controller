@@ -332,60 +332,11 @@ class TestReplicationConfiguration:
         
         assert found_updated_rule, "Updated replication rule not found"
 
-    @pytest.mark.dependency(name="delete_replication", depends=["update_replication"])
-    def test_z_delete_replication_configuration(self, ecr_client):
-        """Test deleting a registry-level replication configuration."""
-        repository_prefix = "test-repo"
-        
-        logging.info("Delete test - looking for singleton resource to delete")
-        
-        # Use the resource from the dependency chain
-        resource_ref = TestReplicationConfiguration._shared_resource_ref
-        resource_name = TestReplicationConfiguration._shared_resource_name
-        assert resource_ref is not None, "Shared resource should exist from previous tests"
-
-        # Verify resource exists before deletion
-        if not k8s.get_resource_exists(resource_ref):
-            pytest.skip(f"Resource {resource_name} doesn't exist - dependency test may have failed")
-
-        # Verify replication was created
-        replication_config = self.get_registry_replication_configuration(ecr_client)
-        assert replication_config is not None
-        initial_rules_count = len(replication_config.get('rules', []))
-        assert initial_rules_count > 0
-
-        # Delete the k8s resource
-        _, deleted = k8s.delete_custom_resource(resource_ref)
-        assert deleted
-
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
-        # Verify the resource no longer exists in Kubernetes
-        assert not k8s.get_resource_exists(resource_ref)
-
-        # Clear the shared resource references
-        TestReplicationConfiguration._shared_resource_ref = None
-        TestReplicationConfiguration._shared_resource_name = None
-
-        # Verify replication configuration was cleaned up in AWS
-        # Note: The registry replication configuration should be empty or not contain our rule
-        replication_config = self.get_registry_replication_configuration(ecr_client)
-        if replication_config and 'rules' in replication_config:
-            # Check that our specific rule is no longer present
-            for rule in replication_config['rules']:
-                if 'repositoryFilters' in rule:
-                    for filter_item in rule['repositoryFilters']:
-                        # Our rule should not be found
-                        assert not (filter_item.get('filter') == repository_prefix and 
-                                  filter_item.get('filterType') == 'PREFIX_MATCH'), \
-                               "Replication rule still exists after deletion"
-
-    @pytest.mark.dependency(name="multiple_rules", depends=["delete_replication"])
+    @pytest.mark.dependency(name="multiple_rules", depends=["update_replication"])
     def test_multiple_replication_rules(self, ecr_client):
         """Test creating a replication configuration with multiple rules.
-        
-        This test runs after the delete test, so the registry should be clean.
-        It creates a new resource to test multiple rules functionality.
+
+        This test runs after the update test, creating a new configuration to test multiple rules functionality.
         """
         resource_name = random_suffix_name("replication-multi", 24)
         registry_id = get_account_id()
@@ -394,24 +345,24 @@ class TestReplicationConfiguration:
         # Use different regions for the two rules, ensuring all three are different
         region_alternatives = {
             'us-west-2': 'us-east-2',
-            'us-west-1': 'us-east-1', 
+            'us-west-1': 'us-east-1',
             'us-east-2': 'us-west-2',
             'us-east-1': 'us-west-1'
         }
-        
+
         # Get second destination that's different from both current and first destination
         destination_region2 = region_alternatives.get(current_region, 'us-east-1')
-        
+
         # If second destination equals first destination, use alternative
         if destination_region2 == destination_region1:
             destination_region2 = 'us-west-1' if destination_region1 != 'us-west-1' else 'us-east-1'
-        
+
         # Safety checks to ensure regions are different from source
         assert destination_region1 != current_region, f"Destination1 region {destination_region1} cannot be same as source region {current_region}"
         assert destination_region2 != current_region, f"Destination2 region {destination_region2} cannot be same as source region {current_region}"
-        
+
         logging.info(f"Multiple rules test setup - Source region: {current_region}, Destination1: {destination_region1}, Destination2: {destination_region2}")
-        
+
         # Ensure the registry is clean (previous tests should have cleaned up)
         replication_config = self.get_registry_replication_configuration(ecr_client)
         if replication_config and 'rules' in replication_config and replication_config['rules']:
@@ -464,14 +415,14 @@ class TestReplicationConfiguration:
         replication_config = self.get_registry_replication_configuration(ecr_client)
         assert replication_config is not None
         assert 'rules' in replication_config
-        
+
         rules = replication_config['rules']
         assert len(rules) >= 2, f"Expected at least 2 rules, got {len(rules)}"
-        
+
         # Check for both rules
         found_prod_rule = False
         found_test_rule = False
-        
+
         for rule in rules:
             if 'repositoryFilters' in rule:
                 for filter_item in rule['repositoryFilters']:
@@ -481,17 +432,44 @@ class TestReplicationConfiguration:
                     elif filter_item.get('filter') == 'test-':
                         found_test_rule = True
                         assert rule['destinations'][0]['region'] == destination_region2
-        
+
         assert found_prod_rule, "Production replication rule not found"
         assert found_test_rule, "Test replication rule not found"
 
-        # Clean up the test resource
+        # Clean up the test resource but keep AWS config for delete test
         _, deleted = k8s.delete_custom_resource(ref)
         assert deleted
 
         time.sleep(DELETE_WAIT_AFTER_SECONDS)
 
+        # Store a reference to the existing shared resource for the delete test
+        # The delete test will clean up the AWS configuration left by this test
+
+    @pytest.mark.dependency(name="delete_replication", depends=["multiple_rules"])
+    def test_z_delete_replication_configuration(self, ecr_client):
+        """Test deleting a registry-level replication configuration.
+
+        This test runs after the multiple rules test and cleans up the AWS configuration.
+        """
+        logging.info("Delete test - cleaning up AWS replication configuration")
+
+        # Verify there's a replication configuration to clean up
+        replication_config = self.get_registry_replication_configuration(ecr_client)
+        if replication_config and 'rules' in replication_config:
+            initial_rules_count = len(replication_config.get('rules', []))
+            logging.info(f"Found {initial_rules_count} rules to clean up")
+        else:
+            logging.info("No replication configuration found - may already be clean")
+
         # Final cleanup: Clear AWS replication configuration at end of dependency chain
         logging.info("Final cleanup: Clearing AWS replication configuration")
         self.clear_registry_replication_configuration(ecr_client)
-        time.sleep(5)
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # Verify cleanup was successful
+        replication_config = self.get_registry_replication_configuration(ecr_client)
+        if replication_config and 'rules' in replication_config:
+            final_rules_count = len(replication_config.get('rules', []))
+            assert final_rules_count == 0, f"Expected 0 rules after cleanup, got {final_rules_count}"
+
+        logging.info("Successfully cleaned up AWS replication configuration")
