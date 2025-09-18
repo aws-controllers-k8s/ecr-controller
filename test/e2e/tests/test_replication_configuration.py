@@ -152,7 +152,7 @@ class TestReplicationConfiguration:
             logging.error(f"Failed to get replication configuration: {e}")
             return None
 
-    @pytest.mark.dependency(name="create_replication")
+    @pytest.mark.dependency(name="create_replication", scope="session")
     def test_a_create_replication_configuration(self, ecr_client):
         """Test creating a registry-level replication configuration from scratch."""
         registry_id = get_account_id()
@@ -253,7 +253,7 @@ class TestReplicationConfiguration:
         # Don't clean up - resource will be used by dependent tests
         logging.info(f"Created resource {resource_name} for dependency chain")
 
-    @pytest.mark.dependency(name="update_replication", depends=["create_replication"])
+    @pytest.mark.dependency(name="update_replication", depends=["create_replication"], scope="session")
     def test_b_update_replication_configuration(self, ecr_client):
         """Test updating a registry-level replication configuration."""
         registry_id = get_account_id()
@@ -332,7 +332,7 @@ class TestReplicationConfiguration:
         
         assert found_updated_rule, "Updated replication rule not found"
 
-    @pytest.mark.dependency(name="multiple_rules", depends=["update_replication"])
+    @pytest.mark.dependency(name="multiple_rules", depends=["update_replication"], scope="session")
     def test_multiple_replication_rules(self, ecr_client):
         """Test creating a replication configuration with multiple rules.
 
@@ -445,7 +445,7 @@ class TestReplicationConfiguration:
         # Store a reference to the existing shared resource for the delete test
         # The delete test will clean up the AWS configuration left by this test
 
-    @pytest.mark.dependency(name="delete_replication", depends=["multiple_rules"])
+    @pytest.mark.dependency(name="delete_replication", depends=["multiple_rules"], scope="session")
     def test_z_delete_replication_configuration(self, ecr_client):
         """Test deleting a registry-level replication configuration.
 
