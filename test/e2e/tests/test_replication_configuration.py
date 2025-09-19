@@ -119,6 +119,35 @@ class TestReplicationConfiguration:
         k8s.create_custom_resource(resource_ref, resource_data)
         cr = k8s.wait_resource_consumed_by_controller(resource_ref)
         assert cr is not None
+
+        # Wait for resource to be synced (not in terminal condition)
+        def wait_for_synced():
+            current_cr = k8s.get_resource(resource_ref)
+            if current_cr is None:
+                return False
+            status = current_cr.get('status', {})
+            conditions = status.get('conditions', [])
+
+            # Check for terminal condition
+            for condition in conditions:
+                if condition.get('type') == 'ACK.Terminal' and condition.get('status') == 'True':
+                    logging.error(f"Resource in terminal condition: {condition.get('message', 'Unknown error')}")
+                    return False
+                if condition.get('type') == 'ACK.ResourceSynced' and condition.get('status') == 'True':
+                    return True
+            return False
+
+        # Wait up to 60 seconds for resource to be synced
+        for i in range(12):
+            if wait_for_synced():
+                break
+            time.sleep(5)
+            logging.info(f"Waiting for resource sync... attempt {i+1}/12")
+        else:
+            current_cr = k8s.get_resource(resource_ref)
+            logging.error(f"Resource failed to sync after 60 seconds. Status: {current_cr.get('status', {}) if current_cr else 'Resource not found'}")
+            raise Exception("Resource failed to sync - may be in terminal condition")
+
         # Wait for AWS propagation
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
         logging.info(f"Successfully created replication resource: {resource_name}")
@@ -163,11 +192,20 @@ class TestReplicationConfiguration:
         # === CLEANUP PHASE ===
         logging.info("=== CLEANUP PHASE ===")
         self.clear_registry_replication_configuration(ecr_client)
-        time.sleep(5)
+        time.sleep(10)  # Increased wait time for AWS propagation
 
-        # Verify AWS is clean
-        initial_config = self.get_registry_replication_configuration(ecr_client)
-        assert initial_config is None or len(initial_config.get('rules', [])) == 0, "AWS should start with no replication configuration"
+        # Verify AWS is clean with retry
+        for attempt in range(3):
+            initial_config = self.get_registry_replication_configuration(ecr_client)
+            if initial_config is None or len(initial_config.get('rules', [])) == 0:
+                break
+            logging.warning(f"AWS cleanup not complete on attempt {attempt + 1}, retrying...")
+            self.clear_registry_replication_configuration(ecr_client)
+            time.sleep(5)
+        else:
+            raise Exception("Failed to clean AWS state after 3 attempts")
+
+        logging.info("✓ AWS state cleaned successfully")
 
         # === CREATE PHASE ===
         logging.info("=== CREATE PHASE ===")
@@ -209,9 +247,10 @@ class TestReplicationConfiguration:
             updated_region = 'us-west-1' if destination_region != 'us-west-1' else 'us-east-1'
 
         assert updated_region != current_region, f"Updated region {updated_region} cannot be same as source region {current_region}"
+        assert updated_region != destination_region, f"Updated region {updated_region} should be different from initial destination {destination_region}"
         logging.info(f"Updating destination from {destination_region} to {updated_region}")
 
-        # Update replication configuration
+        # Update replication configuration using patch
         updates = {
             "spec": {
                 "replicationConfiguration": {
@@ -229,20 +268,30 @@ class TestReplicationConfiguration:
             }
         }
         k8s.patch_custom_resource(resource_ref, updates)
+        logging.info(f"Applied patch to change destination from {destination_region} to {updated_region}")
+
+        # Wait for update to propagate
         time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+        logging.info(f"Waited {UPDATE_WAIT_AFTER_SECONDS} seconds for update to propagate")
 
         # Verify update
         replication_config = self.get_registry_replication_configuration(ecr_client)
         assert replication_config is not None
 
+        logging.info(f"After update - AWS returned {len(replication_config.get('rules', []))} rules")
+
         found_updated_rule = False
-        for rule in replication_config['rules']:
+        for i, rule in enumerate(replication_config['rules']):
+            logging.info(f"Rule {i}: {rule}")
             if 'repositoryFilters' in rule:
-                for filter_item in rule['repositoryFilters']:
+                for j, filter_item in enumerate(rule['repositoryFilters']):
+                    logging.info(f"Filter {j}: {filter_item}")
                     if (filter_item.get('filter') == repository_prefix and
                         filter_item.get('filterType') == 'PREFIX_MATCH'):
                         found_updated_rule = True
-                        assert rule['destinations'][0]['region'] == updated_region
+                        actual_region = rule['destinations'][0]['region']
+                        logging.info(f"Found matching rule - Expected region: {updated_region}, Actual region: {actual_region}")
+                        assert actual_region == updated_region, f"Expected region {updated_region}, but got {actual_region}. Update may not have been processed by controller."
                         assert rule['destinations'][0]['registryId'] == registry_id
                         break
         assert found_updated_rule, "Updated replication rule not found"

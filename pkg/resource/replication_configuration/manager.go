@@ -21,7 +21,6 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
-	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -83,55 +82,56 @@ func (rm *resourceManager) ReadOne(
 
 	// Create a new resource with the response data
 	ko := res.ko.DeepCopy()
-	if resp.ReplicationConfiguration != nil && len(resp.ReplicationConfiguration.Rules) > 0 {
+	if resp.ReplicationConfiguration != nil {
 		rlog.Info("ReadOne: Found AWS replication config", "rulesCount", len(resp.ReplicationConfiguration.Rules))
-		// Convert AWS SDK type to our API type
-		rules := make([]*svcapitypes.ReplicationRule, len(resp.ReplicationConfiguration.Rules))
-		
-		for i, awsRule := range resp.ReplicationConfiguration.Rules {
-			// Convert destinations
-			destinations := make([]*svcapitypes.ReplicationDestination, len(awsRule.Destinations))
-			for j, awsDest := range awsRule.Destinations {
-				destinations[j] = &svcapitypes.ReplicationDestination{
-					RegistryID: awsDest.RegistryId,
-					Region:     awsDest.Region,
-				}
-			}
-			
-			// Convert repository filters
-			var repositoryFilters []*svcapitypes.RepositoryFilter
-			if awsRule.RepositoryFilters != nil {
-				repositoryFilters = make([]*svcapitypes.RepositoryFilter, len(awsRule.RepositoryFilters))
-				for k, awsFilter := range awsRule.RepositoryFilters {
-					filterType := string(awsFilter.FilterType)
-					repositoryFilters[k] = &svcapitypes.RepositoryFilter{
-						Filter:     awsFilter.Filter,
-						FilterType: &filterType,
+
+		// Convert AWS SDK type to our API type, even if rules array is empty
+		var rules []*svcapitypes.ReplicationRule
+		if len(resp.ReplicationConfiguration.Rules) > 0 {
+			rules = make([]*svcapitypes.ReplicationRule, len(resp.ReplicationConfiguration.Rules))
+
+			for i, awsRule := range resp.ReplicationConfiguration.Rules {
+				// Convert destinations
+				destinations := make([]*svcapitypes.ReplicationDestination, len(awsRule.Destinations))
+				for j, awsDest := range awsRule.Destinations {
+					destinations[j] = &svcapitypes.ReplicationDestination{
+						RegistryID: awsDest.RegistryId,
+						Region:     awsDest.Region,
 					}
 				}
+
+				// Convert repository filters
+				var repositoryFilters []*svcapitypes.RepositoryFilter
+				if awsRule.RepositoryFilters != nil {
+					repositoryFilters = make([]*svcapitypes.RepositoryFilter, len(awsRule.RepositoryFilters))
+					for k, awsFilter := range awsRule.RepositoryFilters {
+						filterType := string(awsFilter.FilterType)
+						repositoryFilters[k] = &svcapitypes.RepositoryFilter{
+							Filter:     awsFilter.Filter,
+							FilterType: &filterType,
+						}
+					}
+				}
+
+				rules[i] = &svcapitypes.ReplicationRule{
+					Destinations:      destinations,
+					RepositoryFilters: repositoryFilters,
+				}
 			}
-			
-			rules[i] = &svcapitypes.ReplicationRule{
-				Destinations:      destinations,
-				RepositoryFilters: repositoryFilters,
-			}
+		} else {
+			rlog.Info("ReadOne: Found empty replication configuration, returning resource with empty rules")
 		}
-		
+
 		ko.Spec.ReplicationConfiguration = &svcapitypes.ReplicationConfigurationForRegistry{
 			Rules: rules,
 		}
 		rlog.Info("ReadOne: Returning resource with rules", "rulesCount", len(rules))
 	} else {
-		// If there's no replication configuration or it's empty, treat as non-existent
-		// This allows the controller to manage the singleton resource
-		if resp.ReplicationConfiguration != nil {
-			rlog.Info("ReadOne: Found empty AWS replication config, treating as non-existent for adoption")
-		} else {
-			rlog.Info("ReadOne: No replication configuration in AWS")
+		// If there's no replication configuration in AWS at all, return empty rules
+		rlog.Info("ReadOne: No replication configuration in AWS, returning resource with empty rules")
+		ko.Spec.ReplicationConfiguration = &svcapitypes.ReplicationConfigurationForRegistry{
+			Rules: []*svcapitypes.ReplicationRule{},
 		}
-		
-		// Return a "not found" error to trigger Create instead of adoption
-		return nil, ackerr.NotFound
 	}
 
 	return newResource(rm.rr, ko), nil
@@ -326,16 +326,34 @@ func (rm *resourceManager) FilterSystemTags(
 
 // IsSynced returns true if the resource is synced
 func (rm *resourceManager) IsSynced(ctx context.Context, r acktypes.AWSResource) (bool, error) {
+	var err error
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.IsSynced")
+	defer func() { exit(err) }()
+
 	res := r.(*resource)
-	
-	// For ReplicationConfiguration, always return false to force management
-	// This is a singleton resource that we should always manage
-	if res.ko.Spec.ReplicationConfiguration == nil {
-		// If we don't have a desired spec, we're synced
+
+	// Read current AWS state to compare with desired
+	latest, err := rm.ReadOne(ctx, r)
+	if err != nil {
+		rlog.Info("IsSynced: Failed to read AWS state", "error", err)
+		return false, err
+	}
+
+	latestRes := latest.(*resource)
+
+	// Compare desired vs actual using delta
+	delta := newResourceDelta(res, latestRes)
+	if len(delta.Differences) == 0 {
+		rlog.Info("IsSynced: Resource is synced - no differences found")
 		return true, nil
 	}
-	
-	// If we have a desired configuration, we're not synced (force reconciliation)
+
+	rlog.Info("IsSynced: Resource not synced", "differences", len(delta.Differences))
+	for _, diff := range delta.Differences {
+		rlog.Info("IsSynced: Difference found", "path", diff.Path, "desired", diff.A, "actual", diff.B)
+	}
+
 	return false, nil
 }
 
