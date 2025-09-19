@@ -31,6 +31,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: mark test as slow to run"
     )
+    config.addinivalue_line(
+        "markers", "serial: mark test to run serially (not in parallel)"
+    )
 
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--runslow"):
