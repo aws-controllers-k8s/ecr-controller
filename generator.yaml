@@ -58,6 +58,39 @@ resources:
         template_path: hooks/repository/sdk_delete_post_build_request.go.tpl
     update_operation:
       custom_method_name: customUpdateRepository
+  ReplicationConfiguration:
+    fields:
+      RegistryID:
+        is_primary_key: true
+        is_required: false
+        late_initialize: {}
+        print:
+          name: REGISTRY-ID
+          index: 0
+      ReplicationConfiguration:
+        from:
+          operation: PutReplicationConfiguration
+          path: ReplicationConfiguration
+        is_required: true
+    renames:
+      operations:
+        DescribeRegistry:
+          input_fields:
+            RegistryId: RegistryID
+        PutReplicationConfiguration:
+          input_fields:
+            ReplicationConfiguration: ReplicationConfiguration
+    hooks:
+      sdk_read_one_post_set_output:
+        template_path: hooks/replication_configuration/sdk_read_one_post_set_output.go.tpl
+    read_operation:
+      operation_name: DescribeRegistry
+    create_operation:
+      operation_name: PutReplicationConfiguration
+    update_operation:
+      operation_name: PutReplicationConfiguration
+    delete_operation:
+      operation_name: PutReplicationConfiguration
   PullThroughCacheRule:
     exceptions:
       errors:

@@ -1,0 +1,402 @@
+# Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You may
+# not use this file except in compliance with the License. A copy of the
+# License is located at
+#
+# 	 http://aws.amazon.com/apache2.0/
+#
+# or in the "license" file accompanying this file. This file is distributed
+# on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+# express or implied. See the License for the specific language governing
+# permissions and limitations under the License.
+
+"""Integration tests for ECR Registry-level Replication Configuration.
+"""
+
+import pytest
+import time
+import logging
+from typing import Dict, Optional
+
+from acktest.resources import random_suffix_name
+from acktest.aws.identity import get_region, get_account_id
+from acktest.k8s import resource as k8s
+from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ecr_resource
+from e2e.replacement_values import REPLACEMENT_VALUES
+import os
+
+RESOURCE_PLURAL = "replicationconfigurations"
+
+CREATE_WAIT_AFTER_SECONDS = 30
+UPDATE_WAIT_AFTER_SECONDS = 30
+DELETE_WAIT_AFTER_SECONDS = 30
+
+def get_default_destination_region(current_region: str) -> str:
+    """Get the default destination region (opposite coast) for replication.
+    
+    Args:
+        current_region: The current AWS region
+        
+    Returns:
+        Default destination region on the opposite coast
+    """
+    logging.info(f"Current region for replication: {current_region}")
+    
+    # Allow override via environment variable
+    env_region = os.getenv('ECR_REPLICATION_DESTINATION_REGION')
+    if env_region:
+        logging.info(f"Using environment override destination region: {env_region}")
+        if env_region == current_region:
+            logging.warning(f"Environment destination region {env_region} is same as current region {current_region}, falling back to default logic")
+        else:
+            return env_region
+    
+    # Default mappings to opposite coast
+    east_coast_regions = ['us-east-1', 'us-east-2']
+    west_coast_regions = ['us-west-1', 'us-west-2']
+    
+    destination = None
+    if current_region in east_coast_regions:
+        destination = 'us-west-2'
+    elif current_region in west_coast_regions:
+        destination = 'us-east-2'
+    else:
+        # For other regions, default to us-east-2 to ensure different from us-west-2 default
+        destination = 'us-east-2'
+    
+    # Safety check to ensure destination is different from source
+    if destination == current_region:
+        # Fallback mapping to ensure we never get the same region
+        if current_region == 'us-east-2':
+            destination = 'us-west-2'
+        else:
+            destination = 'us-east-2'
+    
+    logging.info(f"Selected destination region: {destination}")
+    return destination
+
+@service_marker
+class TestReplicationConfiguration:
+
+    def clear_registry_replication_configuration(self, ecr_client):
+        """Clear the registry replication configuration to ensure clean test state."""
+        try:
+            # Clear replication configuration by setting empty rules
+            ecr_client.put_replication_configuration(
+                replicationConfiguration={'rules': []}
+            )
+            logging.info("Cleared registry replication configuration")
+        except Exception as e:
+            logging.warning(f"Failed to clear replication configuration: {e}")
+
+    def create_replication_resource(self, resource_name: str):
+        """Create a replication configuration resource with given name."""
+        resource_ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            resource_name, namespace="default",
+        )
+
+        # Create the resource
+        registry_id = get_account_id()
+        current_region = get_region()
+        repository_prefix = "test-repo"
+        destination_region = get_default_destination_region(current_region)
+
+        logging.info(f"Creating replication resource: {resource_name}")
+
+        replacements = REPLACEMENT_VALUES.copy()
+        replacements["REPLICATION_CONFIG_NAME"] = resource_name
+        replacements["REGISTRY_ID"] = registry_id
+        replacements["REPOSITORY_PREFIX"] = repository_prefix
+        replacements["DESTINATION_REGION"] = destination_region
+
+        resource_data = load_ecr_resource(
+            "replication_configuration",
+            additional_replacements=replacements,
+        )
+
+        k8s.create_custom_resource(resource_ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(resource_ref)
+        assert cr is not None
+
+        # Wait for resource to be synced (not in terminal condition)
+        def wait_for_synced():
+            current_cr = k8s.get_resource(resource_ref)
+            if current_cr is None:
+                return False
+            status = current_cr.get('status', {})
+            conditions = status.get('conditions', [])
+
+            # Check for terminal condition
+            for condition in conditions:
+                if condition.get('type') == 'ACK.Terminal' and condition.get('status') == 'True':
+                    logging.error(f"Resource in terminal condition: {condition.get('message', 'Unknown error')}")
+                    return False
+                if condition.get('type') == 'ACK.ResourceSynced' and condition.get('status') == 'True':
+                    return True
+            return False
+
+        # Wait up to 60 seconds for resource to be synced
+        for i in range(12):
+            if wait_for_synced():
+                break
+            time.sleep(5)
+            logging.info(f"Waiting for resource sync... attempt {i+1}/12")
+        else:
+            current_cr = k8s.get_resource(resource_ref)
+            logging.error(f"Resource failed to sync after 60 seconds. Status: {current_cr.get('status', {}) if current_cr else 'Resource not found'}")
+            raise Exception("Resource failed to sync - may be in terminal condition")
+
+        # Wait for AWS propagation
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        logging.info(f"Successfully created replication resource: {resource_name}")
+
+        return resource_ref
+
+    def setup_method(self, method):
+        """Setup before each test method."""
+        import boto3
+        ecr_client = boto3.client("ecr")
+
+        # Only clear AWS state at the beginning of the dependency chain
+        if method.__name__ == 'test_a_create_replication_configuration':
+            logging.info("Clearing AWS state at start of dependency chain")
+            self.clear_registry_replication_configuration(ecr_client)
+            time.sleep(5)
+
+        # Add wait time between tests to avoid race conditions
+        time.sleep(5)
+
+    def get_registry_replication_configuration(self, ecr_client) -> Optional[dict]:
+        """Get the current replication configuration for the registry."""
+        try:
+            resp = ecr_client.describe_registry()
+            return resp.get('replicationConfiguration', None)
+        except Exception as e:
+            logging.error(f"Failed to get replication configuration: {e}")
+            return None
+
+    def test_replication_configuration_complete_lifecycle(self, ecr_client):
+        """Test complete lifecycle: create → update → multiple rules → delete"""
+        registry_id = get_account_id()
+        current_region = get_region()
+        repository_prefix = "test-repo"
+        destination_region = get_default_destination_region(current_region)
+
+        # Ensure destination is different from source region
+        assert destination_region != current_region, f"Destination region {destination_region} cannot be same as source region {current_region}"
+
+        logging.info(f"Complete lifecycle test - Source region: {current_region}, Destination region: {destination_region}")
+
+        # === CLEANUP PHASE ===
+        logging.info("=== CLEANUP PHASE ===")
+        self.clear_registry_replication_configuration(ecr_client)
+        time.sleep(10)  # Increased wait time for AWS propagation
+
+        # Verify AWS is clean with retry
+        for attempt in range(3):
+            initial_config = self.get_registry_replication_configuration(ecr_client)
+            if initial_config is None or len(initial_config.get('rules', [])) == 0:
+                break
+            logging.warning(f"AWS cleanup not complete on attempt {attempt + 1}, retrying...")
+            self.clear_registry_replication_configuration(ecr_client)
+            time.sleep(5)
+        else:
+            raise Exception("Failed to clean AWS state after 3 attempts")
+
+        logging.info("✓ AWS state cleaned successfully")
+
+        # === CREATE PHASE ===
+        logging.info("=== CREATE PHASE ===")
+        resource_name = random_suffix_name("replication-lifecycle", 24)
+        resource_ref = self.create_replication_resource(resource_name)
+
+        # Verify creation in AWS
+        replication_config = self.get_registry_replication_configuration(ecr_client)
+        assert replication_config is not None
+        assert 'rules' in replication_config
+        assert len(replication_config['rules']) > 0
+
+        # Find our rule
+        found_rule = False
+        for rule in replication_config['rules']:
+            if 'repositoryFilters' in rule:
+                for filter_item in rule['repositoryFilters']:
+                    if (filter_item.get('filter') == repository_prefix and
+                        filter_item.get('filterType') == 'PREFIX_MATCH'):
+                        found_rule = True
+                        dest = rule['destinations'][0]
+                        assert dest['region'] == destination_region
+                        assert dest['registryId'] == registry_id
+                        break
+        assert found_rule, "Replication rule not found after creation"
+        logging.info("✓ CREATE phase completed successfully")
+
+        # === UPDATE PHASE ===
+        logging.info("=== UPDATE PHASE ===")
+        # Get a different region for update
+        region_alternatives = {
+            'us-west-2': 'us-east-1',
+            'us-west-1': 'us-east-1',
+            'us-east-2': 'us-west-1',
+            'us-east-1': 'us-west-1'
+        }
+        updated_region = region_alternatives.get(current_region, 'us-east-1')
+        if updated_region == destination_region:
+            updated_region = 'us-west-1' if destination_region != 'us-west-1' else 'us-east-1'
+
+        assert updated_region != current_region, f"Updated region {updated_region} cannot be same as source region {current_region}"
+        assert updated_region != destination_region, f"Updated region {updated_region} should be different from initial destination {destination_region}"
+        logging.info(f"Updating destination from {destination_region} to {updated_region}")
+
+        # Update replication configuration using patch
+        updates = {
+            "spec": {
+                "replicationConfiguration": {
+                    "rules": [{
+                        "destinations": [{
+                            "region": updated_region,
+                            "registryID": registry_id
+                        }],
+                        "repositoryFilters": [{
+                            "filter": repository_prefix,
+                            "filterType": "PREFIX_MATCH"
+                        }]
+                    }]
+                }
+            }
+        }
+        k8s.patch_custom_resource(resource_ref, updates)
+        logging.info(f"Applied patch to change destination from {destination_region} to {updated_region}")
+
+        # Wait for update to propagate
+        time.sleep(UPDATE_WAIT_AFTER_SECONDS)
+        logging.info(f"Waited {UPDATE_WAIT_AFTER_SECONDS} seconds for update to propagate")
+
+        # Verify update
+        replication_config = self.get_registry_replication_configuration(ecr_client)
+        assert replication_config is not None
+
+        logging.info(f"After update - AWS returned {len(replication_config.get('rules', []))} rules")
+
+        found_updated_rule = False
+        for i, rule in enumerate(replication_config['rules']):
+            logging.info(f"Rule {i}: {rule}")
+            if 'repositoryFilters' in rule:
+                for j, filter_item in enumerate(rule['repositoryFilters']):
+                    logging.info(f"Filter {j}: {filter_item}")
+                    if (filter_item.get('filter') == repository_prefix and
+                        filter_item.get('filterType') == 'PREFIX_MATCH'):
+                        found_updated_rule = True
+                        actual_region = rule['destinations'][0]['region']
+                        logging.info(f"Found matching rule - Expected region: {updated_region}, Actual region: {actual_region}")
+                        assert actual_region == updated_region, f"Expected region {updated_region}, but got {actual_region}. Update may not have been processed by controller."
+                        assert rule['destinations'][0]['registryId'] == registry_id
+                        break
+        assert found_updated_rule, "Updated replication rule not found"
+        logging.info("✓ UPDATE phase completed successfully")
+
+        # Clean up the single resource
+        k8s.delete_custom_resource(resource_ref)
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # === MULTIPLE RULES PHASE ===
+        logging.info("=== MULTIPLE RULES PHASE ===")
+        # Clear registry for clean multiple rules test
+        self.clear_registry_replication_configuration(ecr_client)
+        time.sleep(5)
+
+        # Test multiple rules with different regions
+        multi_resource_name = random_suffix_name("replication-multi", 24)
+        destination_region1 = get_default_destination_region(current_region)
+        destination_region2 = region_alternatives.get(current_region, 'us-east-1')
+        if destination_region2 == destination_region1:
+            destination_region2 = 'us-west-1' if destination_region1 != 'us-west-1' else 'us-east-1'
+
+        assert destination_region1 != current_region
+        assert destination_region2 != current_region
+
+        logging.info(f"Multiple rules test - Destination1: {destination_region1}, Destination2: {destination_region2}")
+
+        # Create resource with multiple rules
+        resource_data = {
+            "apiVersion": f"{CRD_GROUP}/{CRD_VERSION}",
+            "kind": "ReplicationConfiguration",
+            "metadata": {"name": multi_resource_name},
+            "spec": {
+                "registryID": registry_id,
+                "replicationConfiguration": {
+                    "rules": [
+                        {
+                            "destinations": [
+                                {"region": destination_region1, "registryID": registry_id}
+                            ],
+                            "repositoryFilters": [
+                                {"filter": "prod-", "filterType": "PREFIX_MATCH"}
+                            ]
+                        },
+                        {
+                            "destinations": [
+                                {"region": destination_region2, "registryID": registry_id}
+                            ],
+                            "repositoryFilters": [
+                                {"filter": "test-", "filterType": "PREFIX_MATCH"}
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+
+        multi_ref = k8s.CustomResourceReference(
+            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+            multi_resource_name, namespace="default",
+        )
+        k8s.create_custom_resource(multi_ref, resource_data)
+        cr = k8s.wait_resource_consumed_by_controller(multi_ref)
+        assert cr is not None
+        time.sleep(CREATE_WAIT_AFTER_SECONDS)
+
+        # Verify both rules
+        replication_config = self.get_registry_replication_configuration(ecr_client)
+        assert replication_config is not None
+        assert 'rules' in replication_config
+
+        rules = replication_config['rules']
+        assert len(rules) >= 2, f"Expected at least 2 rules, got {len(rules)}"
+
+        found_prod_rule = False
+        found_test_rule = False
+
+        for rule in rules:
+            if 'repositoryFilters' in rule:
+                for filter_item in rule['repositoryFilters']:
+                    if filter_item.get('filter') == 'prod-':
+                        found_prod_rule = True
+                        assert rule['destinations'][0]['region'] == destination_region1
+                    elif filter_item.get('filter') == 'test-':
+                        found_test_rule = True
+                        assert rule['destinations'][0]['region'] == destination_region2
+
+        assert found_prod_rule, "Production replication rule not found"
+        assert found_test_rule, "Test replication rule not found"
+        logging.info("✓ MULTIPLE RULES phase completed successfully")
+
+        # Clean up multiple rules resource
+        k8s.delete_custom_resource(multi_ref)
+        time.sleep(DELETE_WAIT_AFTER_SECONDS)
+
+        # === FINAL CLEANUP ===
+        logging.info("=== FINAL CLEANUP ===")
+        self.clear_registry_replication_configuration(ecr_client)
+        time.sleep(5)
+
+        # Verify final cleanup
+        final_config = self.get_registry_replication_configuration(ecr_client)
+        if final_config and 'rules' in final_config:
+            final_rules_count = len(final_config.get('rules', []))
+            assert final_rules_count == 0, f"Expected 0 rules after cleanup, got {final_rules_count}"
+
+        logging.info("✓ COMPLETE LIFECYCLE test finished successfully")
+
