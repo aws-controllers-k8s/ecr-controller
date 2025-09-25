@@ -25,6 +25,7 @@ import (
 
 	iamapitypes "github.com/aws-controllers-k8s/iam-controller/apis/v1alpha1"
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	secretsmanagerapitypes "github.com/aws-controllers-k8s/secretsmanager-controller/apis/v1alpha1"
@@ -151,8 +152,9 @@ func getReferencedResourceState_Secret(
 	}
 	var refResourceTerminal bool
 	for _, cond := range obj.Status.Conditions {
-		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-			cond.Status == corev1.ConditionTrue {
+		if cond.Type == ackv1alpha1.ConditionTypeReady &&
+			cond.Status == corev1.ConditionFalse &&
+			*cond.Reason == ackcondition.TerminalReason {
 			return ackerr.ResourceReferenceTerminalFor(
 				"Secret",
 				namespace, name)
@@ -163,14 +165,14 @@ func getReferencedResourceState_Secret(
 			"Secret",
 			namespace, name)
 	}
-	var refResourceSynced bool
+	var refResourceReady bool
 	for _, cond := range obj.Status.Conditions {
-		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+		if cond.Type == ackv1alpha1.ConditionTypeReady &&
 			cond.Status == corev1.ConditionTrue {
-			refResourceSynced = true
+			refResourceReady = true
 		}
 	}
-	if !refResourceSynced {
+	if !refResourceReady {
 		return ackerr.ResourceReferenceNotSyncedFor(
 			"Secret",
 			namespace, name)
@@ -234,8 +236,9 @@ func getReferencedResourceState_Role(
 	}
 	var refResourceTerminal bool
 	for _, cond := range obj.Status.Conditions {
-		if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-			cond.Status == corev1.ConditionTrue {
+		if cond.Type == ackv1alpha1.ConditionTypeReady &&
+			cond.Status == corev1.ConditionFalse &&
+			*cond.Reason == ackcondition.TerminalReason {
 			return ackerr.ResourceReferenceTerminalFor(
 				"Role",
 				namespace, name)
@@ -246,14 +249,14 @@ func getReferencedResourceState_Role(
 			"Role",
 			namespace, name)
 	}
-	var refResourceSynced bool
+	var refResourceReady bool
 	for _, cond := range obj.Status.Conditions {
-		if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+		if cond.Type == ackv1alpha1.ConditionTypeReady &&
 			cond.Status == corev1.ConditionTrue {
-			refResourceSynced = true
+			refResourceReady = true
 		}
 	}
-	if !refResourceSynced {
+	if !refResourceReady {
 		return ackerr.ResourceReferenceNotSyncedFor(
 			"Role",
 			namespace, name)
