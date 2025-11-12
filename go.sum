@@ -1,7 +1,7 @@
 github.com/aws-controllers-k8s/iam-controller v1.5.0 h1:O9AYY5P8eIFircfkjIEwkXwGgfXpGRk6xEn8Qb78BiU=
 github.com/aws-controllers-k8s/iam-controller v1.5.0/go.mod h1:V19V1L0e1Gde8/7Ti0wKugtXU9oK8zaaYDe54TQm94E=
-github.com/aws-controllers-k8s/runtime v0.52.0 h1:Q5UIAn6SSBr60t/DiU/zr6NLBlUuK2AG3yy2ma/9gDU=
-github.com/aws-controllers-k8s/runtime v0.52.0/go.mod h1:OkUJN+Ds799JLYZsMJrO2vDJ4snxUeHK2MgrQHbU+Qc=
+github.com/aws-controllers-k8s/runtime v0.53.0 h1:HMnBROZd8KxPzkyoZi2iHVaxXPW6Snxzcebr9Hsh/tY=
+github.com/aws-controllers-k8s/runtime v0.53.0/go.mod h1:OkUJN+Ds799JLYZsMJrO2vDJ4snxUeHK2MgrQHbU+Qc=
 github.com/aws-controllers-k8s/secretsmanager-controller v1.1.0 h1:S+8FLIRMcwzR+Vub86L3GJet/XMCMGHIjVyxnNn0dNI=
 github.com/aws-controllers-k8s/secretsmanager-controller v1.1.0/go.mod h1:Q8+dGg+vmB8FcUftJp+Jwe47V5xVVelYWCzCVuKqxOE=
 github.com/aws/aws-sdk-go v1.49.0 h1:g9BkW1fo9GqKfwg2+zCD+TW/D36Ux+vtfJ8guF4AYmY=
