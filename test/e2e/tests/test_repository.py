@@ -21,6 +21,7 @@ from typing import Dict, Tuple
 
 from acktest import tags as tagutil
 from acktest.resources import random_suffix_name
+from acktest import tags as tags
 from acktest.aws.identity import get_region, get_account_id
 from acktest.k8s import resource as k8s
 from e2e import service_marker, CRD_GROUP, CRD_VERSION, load_ecr_resource
@@ -42,6 +43,85 @@ IMAGE_TAG_MUTABILITY_EXCLUSION_FILTER_STAGING = '{"filter": "*.staging","filterT
 
 def minify_json_string(json_string: str) -> str:
     return json_string.replace("\n", "").replace(" ", "")
+
+@pytest.fixture
+def repository(request):
+    resource_name = random_suffix_name("ecr-repository", 24)
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["REPOSITORY_NAME"] = resource_name
+    replacements["DELETION_POLICY"] = "delete"
+    # Load ECR CR
+    resource_data = load_ecr_resource(
+        "repository",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+
+    yield (ref, cr)
+
+    if k8s.get_resource_exists(ref):  
+        # Delete k8s resource
+        _, deleted = k8s.delete_custom_resource(ref)
+        assert deleted is True
+
+@pytest.fixture
+def repository_adopt_or_create(request):
+    resource_name = random_suffix_name("ecr-repository", 24)
+    replacements = REPLACEMENT_VALUES.copy()
+    replacements["REPOSITORY_NAME"] = resource_name
+    replacements["DELETION_POLICY"] = "retain"
+    # Load ECR CR
+    resource_data = load_ecr_resource(
+        "repository",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+    assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
+    # Delete k8s resource
+    _, deleted = k8s.delete_custom_resource(ref)
+    assert deleted is True
+
+    resource_data = load_ecr_resource(
+        "repository_adopt_or_create",
+        additional_replacements=replacements,
+    )
+    logging.debug(resource_data)
+    # Create k8s resource
+    ref = k8s.CustomResourceReference(
+        CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
+        resource_name, namespace="default",
+    )
+    k8s.create_custom_resource(ref, resource_data)
+
+    cr = k8s.wait_resource_consumed_by_controller(ref)
+    assert cr is not None
+    assert k8s.get_resource_exists(ref)
+    yield (ref, cr)
+
+    # Delete k8s resource
+    _, deleted = k8s.delete_custom_resource(ref)
+    assert deleted is True
+
+
 
 @service_marker
 @pytest.mark.canary
@@ -99,33 +179,14 @@ class TestRepository:
     def repository_exists(self, ecr_client, repository_name: str) -> bool:
         return self.get_repository(ecr_client, repository_name) is not None
 
-    def test_basic_repository(self, ecr_client):
-        resource_name = random_suffix_name("ecr-repository", 24)
+    def test_basic_repository(self, ecr_client, repository):
+        (ref, cr) = repository
 
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["REPOSITORY_NAME"] = resource_name
-        # Load ECR CR
-        resource_data = load_ecr_resource(
-            "repository",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-        # Get latest repository CR
-        cr = k8s.wait_resource_consumed_by_controller(ref)
+        assert 'spec' in cr
+        assert 'name' in cr['spec']
+        resource_name = cr['spec']['name']
 
         # Check ECR repository exists
         exists = self.repository_exists(ecr_client, resource_name)
@@ -142,16 +203,28 @@ class TestRepository:
         repo = self.get_repository(ecr_client, resource_name)
         assert repo is not None
         assert repo["imageScanningConfiguration"]["scanOnPush"] is True
+    
+    def test_adopt_or_create_repository(self, ecr_client, repository_adopt_or_create):
+        (ref, cr) = repository_adopt_or_create
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        # Delete k8s resource
-        _, deleted = k8s.delete_custom_resource(ref)
-        assert deleted is True
+        assert 'spec' in cr
+        assert 'name' in cr['spec']
+        resource_name = cr['spec']['name']
 
-        time.sleep(DELETE_WAIT_AFTER_SECONDS)
-
-        # Check ECR repository doesn't exists
+        # Check ECR repository exists
         exists = self.repository_exists(ecr_client, resource_name)
-        assert not exists
+        assert exists
+
+        # ensure status fields are populated
+        assert 'status' in cr
+        assert 'repositoryURI' in cr['status']
+
+        # Ensure we update tags after adoption
+        repository_tags = tagutil.clean(self.get_resource_tags(ecr_client, cr["status"]["ackResourceMetadata"]["arn"]))
+        desired_tags = cr['spec']['tags']
+        assert repository_tags[0]['Key'] == desired_tags[0]['key']
+        assert repository_tags[0]['Value'] == desired_tags[0]['value']
 
     def test_repository_lifecycle_policy(self, ecr_client):
         resource_name = random_suffix_name("ecr-repository", 24)
@@ -209,32 +282,13 @@ class TestRepository:
         exists = self.repository_exists(ecr_client, resource_name)
         assert not exists
 
-    def test_repository_tags(self, ecr_client):
-        resource_name = random_suffix_name("ecr-repository", 24)
+    def test_repository_tags(self, ecr_client, repository):
+        (ref, cr) = repository
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
 
-        replacements = REPLACEMENT_VALUES.copy()
-        replacements["REPOSITORY_NAME"] = resource_name
-        # Load ECR CR
-        resource_data = load_ecr_resource(
-            "repository",
-            additional_replacements=replacements,
-        )
-        logging.debug(resource_data)
-
-        # Create k8s resource
-        ref = k8s.CustomResourceReference(
-            CRD_GROUP, CRD_VERSION, RESOURCE_PLURAL,
-            resource_name, namespace="default",
-        )
-        k8s.create_custom_resource(ref, resource_data)
-        cr = k8s.wait_resource_consumed_by_controller(ref)
-
-        assert cr is not None
-        assert k8s.get_resource_exists(ref)
-
-        time.sleep(CREATE_WAIT_AFTER_SECONDS)
-
-        cr = k8s.wait_resource_consumed_by_controller(ref)
+        assert 'spec' in cr
+        assert 'name' in cr['spec']
+        resource_name = cr['spec']['name']
 
         # Check ECR repository exists
         exists = self.repository_exists(ecr_client, resource_name)

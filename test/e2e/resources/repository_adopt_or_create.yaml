@@ -3,9 +3,13 @@ kind: Repository
 metadata:
   name: $REPOSITORY_NAME
   annotations:
-    services.k8s.aws/deletion-policy: $DELETION_POLICY
+    services.k8s.aws/adoption-policy: adopt-or-create
 spec:
   name: $REPOSITORY_NAME
   imageScanningConfiguration:
     scanOnPush: false
   imageTagMutability: MUTABLE
+  tags:
+  # ensure we update after adoption
+  - key: key
+    value: val
