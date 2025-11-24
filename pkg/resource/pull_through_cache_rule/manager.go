@@ -306,7 +306,7 @@ func (rm *resourceManager) EnsureTags(
 //   - aws:cloudformation:stack-name (CloudFormation)
 //   - aws:eks:cluster-name (EKS)
 //   - services.k8s.aws/* (Kubernetes-managed)
-func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource, systemTags []string) {
+func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
 
 }
 

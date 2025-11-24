@@ -325,7 +325,7 @@ func (rm *resourceManager) EnsureTags(
 //   - aws:cloudformation:stack-name (CloudFormation)
 //   - aws:eks:cluster-name (EKS)
 //   - services.k8s.aws/* (Kubernetes-managed)
-func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource, systemTags []string) {
+func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
 	r := rm.concreteResource(res)
 	if r == nil || r.ko == nil {
 		return
@@ -333,7 +333,7 @@ func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource, systemTags
 	var existingTags []*svcapitypes.Tag
 	existingTags = r.ko.Spec.Tags
 	resourceTags, tagKeyOrder := convertToOrderedACKTags(existingTags)
-	ignoreSystemTags(resourceTags, systemTags)
+	ignoreSystemTags(resourceTags, []string{"services.k8s.aws/namespace", "services.k8s.aws/controller-version"})
 	r.ko.Spec.Tags = fromACKTags(resourceTags, tagKeyOrder)
 }
 
