@@ -1,0 +1,74 @@
+  RepositoryCreationTemplate:
+    fields:
+      RepositoryNamePrefix:
+        is_primary_key: true
+        is_required: true
+        late_initialize: {}
+        print:
+          name: PREFIX
+          index: 0
+      EncryptionConfiguration:
+        from:
+          operation: CreateRepositoryCreationTemplate
+          path: EncryptionConfiguration
+        is_required: false
+      ImageTagMutability:
+        from:
+          operation: CreateRepositoryCreationTemplate
+          path: ImageTagMutability
+        is_required: false
+      ImageScanningConfiguration:
+        from:
+          operation: CreateRepositoryCreationTemplate
+          path: ImageScanningConfiguration
+        is_required: false
+      ResourceTags:
+        from:
+          operation: CreateRepositoryCreationTemplate
+          path: ResourceTags
+        is_required: false
+      Description:
+        from:
+          operation: CreateRepositoryCreationTemplate
+          path: Description
+        is_required: false
+      RepositoryCreationTemplateARN:
+        from:
+          operation: DescribeRepositoryCreationTemplate
+          path: RepositoryCreationTemplate.RepositoryCreationTemplateArn
+        is_read_only: true
+        late_initialize: {}
+      CreatedAt:
+        from:
+          operation: DescribeRepositoryCreationTemplate
+          path: RepositoryCreationTemplate.CreatedAt
+        is_read_only: true
+        late_initialize: {}
+      UpdatedAt:
+        from:
+          operation: DescribeRepositoryCreationTemplate
+          path: RepositoryCreationTemplate.UpdatedAt
+        is_read_only: true
+        late_initialize: {}
+    renames:
+      operations:
+        DescribeRepositoryCreationTemplate:
+          input_fields:
+            Prefix: RepositoryNamePrefix
+        CreateRepositoryCreationTemplate:
+          input_fields:
+            Prefix: RepositoryNamePrefix
+        UpdateRepositoryCreationTemplate:
+          input_fields:
+            Prefix: RepositoryNamePrefix
+        DeleteRepositoryCreationTemplate:
+          input_fields:
+            Prefix: RepositoryNamePrefix
+    read_operation:
+      operation_name: DescribeRepositoryCreationTemplate
+    create_operation:
+      operation_name: CreateRepositoryCreationTemplate
+    update_operation:
+      operation_name: UpdateRepositoryCreationTemplate
+    delete_operation:
+      operation_name: DeleteRepositoryCreationTemplate

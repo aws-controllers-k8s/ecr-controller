@@ -1,0 +1,18 @@
+apiVersion: ecr.services.k8s.aws/v1alpha1
+kind: RepositoryCreationTemplate
+metadata:
+  name: $TEMPLATE_NAME
+  namespace: default
+spec:
+  repositoryNamePrefix: "$REPOSITORY_PREFIX"
+  description: "Template for automatic repository creation on push"
+  imageTagMutability: MUTABLE
+  imageScanningConfiguration:
+    scanOnPush: true
+  encryptionConfiguration:
+    encryptionType: AES256
+  resourceTags:
+    - key: "Environment"
+      value: "Production"
+    - key: "ManagedBy"
+      value: "ACK"
