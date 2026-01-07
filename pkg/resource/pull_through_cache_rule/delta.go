@@ -17,16 +17,15 @@ package pull_through_cache_rule
 
 import (
 	"bytes"
-	"reflect"
 
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // Hack to avoid import errors during build...
 var (
 	_ = &bytes.Buffer{}
-	_ = &reflect.Method{}
 	_ = &acktags.Tags{}
 )
 
@@ -50,7 +49,7 @@ func newResourceDelta(
 			delta.Add("Spec.CredentialARN", a.ko.Spec.CredentialARN, b.ko.Spec.CredentialARN)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.CredentialRef, b.ko.Spec.CredentialRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.CredentialRef, b.ko.Spec.CredentialRef) {
 		delta.Add("Spec.CredentialRef", a.ko.Spec.CredentialRef, b.ko.Spec.CredentialRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN) {
@@ -60,7 +59,7 @@ func newResourceDelta(
 			delta.Add("Spec.CustomRoleARN", a.ko.Spec.CustomRoleARN, b.ko.Spec.CustomRoleARN)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.CustomRoleRef, b.ko.Spec.CustomRoleRef) {
+	if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.CustomRoleRef, b.ko.Spec.CustomRoleRef) {
 		delta.Add("Spec.CustomRoleRef", a.ko.Spec.CustomRoleRef, b.ko.Spec.CustomRoleRef)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.ECRRepositoryPrefix, b.ko.Spec.ECRRepositoryPrefix) {
