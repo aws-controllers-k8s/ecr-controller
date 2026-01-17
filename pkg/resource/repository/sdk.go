@@ -303,17 +303,13 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-	// Set the repository policy
-	if ko.Spec.Policy != nil && *ko.Spec.Policy != "" {
-		if _, err := rm.updateRepositoryPolicy(ctx, desired); err != nil {
-			return nil, err
-		}
-	}
-	// Set the lifecycle policy
-	if ko.Spec.LifecyclePolicy != nil && *ko.Spec.LifecyclePolicy != "" {
-		if _, err := rm.updateLifecyclePolicy(ctx, desired); err != nil {
-			return nil, err
-		}
+	// Repository policy and lifecycle policy need to be set after creation.
+	// Return a requeue error to trigger another reconcile loop where these
+	// will be handled by the update path, avoiding the issue where a failure
+	// in these API calls would leave the repository unmanaged.
+	if (ko.Spec.Policy != nil && *ko.Spec.Policy != "") ||
+		(ko.Spec.LifecyclePolicy != nil && *ko.Spec.LifecyclePolicy != "") {
+		return nil, ackrequeue.Needed(fmt.Errorf("reconciling update only fields"))
 	}
 	return &resource{ko}, nil
 }
