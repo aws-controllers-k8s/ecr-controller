@@ -43,6 +43,7 @@ import (
 
 	_ "github.com/aws-controllers-k8s/ecr-controller/pkg/resource/pull_through_cache_rule"
 	_ "github.com/aws-controllers-k8s/ecr-controller/pkg/resource/repository"
+	_ "github.com/aws-controllers-k8s/ecr-controller/pkg/resource/repository_creation_template"
 
 	"github.com/aws-controllers-k8s/ecr-controller/pkg/version"
 )

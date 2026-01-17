@@ -152,6 +152,7 @@ reconcile:
   resources:
     - PullThroughCacheRule
     - Repository
+    - RepositoryCreationTemplate
 
 serviceAccount:
   # Specifies whether a service account should be created

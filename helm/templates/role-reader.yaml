@@ -18,6 +18,7 @@ rules:
   resources:
   - pullthroughcacherules
   - repositories
+  - repositorycreationtemplates
   verbs:
   - get
   - list

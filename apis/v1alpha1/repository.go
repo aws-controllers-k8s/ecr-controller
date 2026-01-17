@@ -28,6 +28,10 @@ type RepositorySpec struct {
 	// The encryption configuration for the repository. This determines how the
 	// contents of your repository are encrypted at rest.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
+	// The imageScanningConfiguration parameter is being deprecated, in favor of
+	// specifying the image scanning configuration at the registry level. For more
+	// information, see PutRegistryScanningConfiguration.
+	//
 	// The image scanning configuration for the repository. This determines whether
 	// images are scanned for known vulnerabilities after being pushed to the repository.
 	ImageScanningConfiguration *ImageScanningConfiguration `json:"imageScanningConfiguration,omitempty"`
@@ -36,8 +40,8 @@ type RepositorySpec struct {
 	// be overwritten. If IMMUTABLE is specified, all image tags within the repository
 	// will be immutable which will prevent them from being overwritten.
 	ImageTagMutability *string `json:"imageTagMutability,omitempty"`
-	// Creates a repository with a list of filters that define which image tags
-	// can override the default image tag mutability setting.
+	// A list of filters that specify which image tags should be excluded from the
+	// repository's image tag mutability setting.
 	ImageTagMutabilityExclusionFilters []*ImageTagMutabilityExclusionFilter `json:"imageTagMutabilityExclusionFilters,omitempty"`
 	// The JSON repository policy text to apply to the repository.
 	LifecyclePolicy *string `json:"lifecyclePolicy,omitempty"`

@@ -11,6 +11,7 @@ rules:
   resources:
   - pullthroughcacherules
   - repositories
+  - repositorycreationtemplates
   verbs:
   - create
   - delete
@@ -24,6 +25,7 @@ rules:
   resources:
   - pullthroughcacherules
   - repositories
+  - repositorycreationtemplates
   verbs:
   - get
   - patch

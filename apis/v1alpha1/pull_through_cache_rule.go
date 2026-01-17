@@ -28,7 +28,7 @@ type PullThroughCacheRuleSpec struct {
 	// The Amazon Resource Name (ARN) of the Amazon Web Services Secrets Manager
 	// secret that identifies the credentials to authenticate to the upstream registry.
 	//
-	// Regex Pattern: `^arn:aws:secretsmanager:[a-zA-Z0-9-:]+:secret:ecr\-pullthroughcache\/[a-zA-Z0-9\/_+=.@-]+$`
+	// Regex Pattern: `^arn:aws(-\w+)*:secretsmanager:[a-zA-Z0-9-:]+:secret:ecr\-pullthroughcache\/[a-zA-Z0-9\/_+=.@-]+$`
 	CredentialARN *string                                  `json:"credentialARN,omitempty"`
 	CredentialRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"credentialRef,omitempty"`
 	// Amazon Resource Name (ARN) of the IAM role to be assumed by Amazon ECR to
