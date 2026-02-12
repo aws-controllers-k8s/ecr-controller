@@ -15,6 +15,23 @@
 
 package v1alpha1
 
+type ArtifactStatus string
+
+const (
+	ArtifactStatus_ACTIVATING ArtifactStatus = "ACTIVATING"
+	ArtifactStatus_ACTIVE     ArtifactStatus = "ACTIVE"
+	ArtifactStatus_ARCHIVED   ArtifactStatus = "ARCHIVED"
+)
+
+type ArtifactStatusFilter string
+
+const (
+	ArtifactStatusFilter_ACTIVATING ArtifactStatusFilter = "ACTIVATING"
+	ArtifactStatusFilter_ACTIVE     ArtifactStatusFilter = "ACTIVE"
+	ArtifactStatusFilter_ANY        ArtifactStatusFilter = "ANY"
+	ArtifactStatusFilter_ARCHIVED   ArtifactStatusFilter = "ARCHIVED"
+)
+
 type EncryptionType string
 
 const (
@@ -37,12 +54,14 @@ const (
 type ImageActionType string
 
 const (
-	ImageActionType_EXPIRE ImageActionType = "EXPIRE"
+	ImageActionType_EXPIRE     ImageActionType = "EXPIRE"
+	ImageActionType_TRANSITION ImageActionType = "TRANSITION"
 )
 
 type ImageFailureCode string
 
 const (
+	ImageFailureCode_ImageInaccessible             ImageFailureCode = "ImageInaccessible"
 	ImageFailureCode_ImageNotFound                 ImageFailureCode = "ImageNotFound"
 	ImageFailureCode_ImageReferencedByManifestList ImageFailureCode = "ImageReferencedByManifestList"
 	ImageFailureCode_ImageTagDoesNotMatchDigest    ImageFailureCode = "ImageTagDoesNotMatchDigest"
@@ -53,6 +72,23 @@ const (
 	ImageFailureCode_UpstreamAccessDenied          ImageFailureCode = "UpstreamAccessDenied"
 	ImageFailureCode_UpstreamTooManyRequests       ImageFailureCode = "UpstreamTooManyRequests"
 	ImageFailureCode_UpstreamUnavailable           ImageFailureCode = "UpstreamUnavailable"
+)
+
+type ImageStatus string
+
+const (
+	ImageStatus_ACTIVATING ImageStatus = "ACTIVATING"
+	ImageStatus_ACTIVE     ImageStatus = "ACTIVE"
+	ImageStatus_ARCHIVED   ImageStatus = "ARCHIVED"
+)
+
+type ImageStatusFilter string
+
+const (
+	ImageStatusFilter_ACTIVATING ImageStatusFilter = "ACTIVATING"
+	ImageStatusFilter_ACTIVE     ImageStatusFilter = "ACTIVE"
+	ImageStatusFilter_ANY        ImageStatusFilter = "ANY"
+	ImageStatusFilter_ARCHIVED   ImageStatusFilter = "ARCHIVED"
 )
 
 type ImageTagMutability string
@@ -73,6 +109,7 @@ const (
 type LayerAvailability string
 
 const (
+	LayerAvailability_ARCHIVED    LayerAvailability = "ARCHIVED"
 	LayerAvailability_AVAILABLE   LayerAvailability = "AVAILABLE"
 	LayerAvailability_UNAVAILABLE LayerAvailability = "UNAVAILABLE"
 )
@@ -91,6 +128,19 @@ const (
 	LifecyclePolicyPreviewStatus_EXPIRED     LifecyclePolicyPreviewStatus = "EXPIRED"
 	LifecyclePolicyPreviewStatus_FAILED      LifecyclePolicyPreviewStatus = "FAILED"
 	LifecyclePolicyPreviewStatus_IN_PROGRESS LifecyclePolicyPreviewStatus = "IN_PROGRESS"
+)
+
+type LifecyclePolicyStorageClass string
+
+const (
+	LifecyclePolicyStorageClass_ARCHIVE  LifecyclePolicyStorageClass = "ARCHIVE"
+	LifecyclePolicyStorageClass_STANDARD LifecyclePolicyStorageClass = "STANDARD"
+)
+
+type LifecyclePolicyTargetStorageClass string
+
+const (
+	LifecyclePolicyTargetStorageClass_ARCHIVE LifecyclePolicyTargetStorageClass = "ARCHIVE"
 )
 
 type RCTAppliedFor string
@@ -129,6 +179,7 @@ const (
 	ScanStatus_COMPLETE                 ScanStatus = "COMPLETE"
 	ScanStatus_FAILED                   ScanStatus = "FAILED"
 	ScanStatus_FINDINGS_UNAVAILABLE     ScanStatus = "FINDINGS_UNAVAILABLE"
+	ScanStatus_IMAGE_ARCHIVED           ScanStatus = "IMAGE_ARCHIVED"
 	ScanStatus_IN_PROGRESS              ScanStatus = "IN_PROGRESS"
 	ScanStatus_LIMIT_EXCEEDED           ScanStatus = "LIMIT_EXCEEDED"
 	ScanStatus_PENDING                  ScanStatus = "PENDING"
@@ -155,12 +206,33 @@ const (
 	ScanningRepositoryFilterType_WILDCARD ScanningRepositoryFilterType = "WILDCARD"
 )
 
+type SigningRepositoryFilterType string
+
+const (
+	SigningRepositoryFilterType_WILDCARD_MATCH SigningRepositoryFilterType = "WILDCARD_MATCH"
+)
+
+type SigningStatus string
+
+const (
+	SigningStatus_COMPLETE    SigningStatus = "COMPLETE"
+	SigningStatus_FAILED      SigningStatus = "FAILED"
+	SigningStatus_IN_PROGRESS SigningStatus = "IN_PROGRESS"
+)
+
 type TagStatus string
 
 const (
 	TagStatus_ANY      TagStatus = "ANY"
 	TagStatus_TAGGED   TagStatus = "TAGGED"
 	TagStatus_UNTAGGED TagStatus = "UNTAGGED"
+)
+
+type TargetStorageClass string
+
+const (
+	TargetStorageClass_ARCHIVE  TargetStorageClass = "ARCHIVE"
+	TargetStorageClass_STANDARD TargetStorageClass = "STANDARD"
 )
 
 type UpstreamRegistry string

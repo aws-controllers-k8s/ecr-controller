@@ -1,3 +1,10 @@
+operations:
+  CreateRepositoryCreationTemplate:
+    output_wrapper_field_path: RepositoryCreationTemplate
+  UpdateRepositoryCreationTemplate:
+    output_wrapper_field_path: RepositoryCreationTemplate
+  DescribeRepositoryCreationTemplates:
+    output_wrapper_field_path: RepositoryCreationTemplates
 resources:
   Repository:
     print:
@@ -94,6 +101,24 @@ resources:
         - EcrRepositoryPrefix
     tags:
       ignore: true
+  RepositoryCreationTemplate:
+    exceptions:
+      errors:
+        404:
+          code: TemplateNotFoundException
+    fields:
+      Prefix:
+        is_primary_key: true
+        is_immutable: true
+      CustomRoleARN:
+        references:
+          resource: Role
+          service_name: iam
+          path: Status.ACKResourceMetadata.ARN
+    list_operation:
+      match_fields:
+        - Prefix
+    tags:
+      ignore: true
 ignore:
-  resource_names:
-  - RepositoryCreationTemplate
+  resource_names: []

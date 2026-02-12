@@ -4,3 +4,4 @@ resources:
   - common
   - bases/ecr.services.k8s.aws_pullthroughcacherules.yaml
   - bases/ecr.services.k8s.aws_repositories.yaml
+  - bases/ecr.services.k8s.aws_repositorycreationtemplates.yaml

@@ -48,7 +48,7 @@ spec:
                   The Amazon Resource Name (ARN) of the Amazon Web Services Secrets Manager
                   secret that identifies the credentials to authenticate to the upstream registry.
 
-                  Regex Pattern: `^arn:aws:secretsmanager:[a-zA-Z0-9-:]+:secret:ecr\-pullthroughcache\/[a-zA-Z0-9\/_+=.@-]+$`
+                  Regex Pattern: `^arn:aws(-\w+)*:secretsmanager:[a-zA-Z0-9-:]+:secret:ecr\-pullthroughcache\/[a-zA-Z0-9\/_+=.@-]+$`
                 type: string
               credentialRef:
                 description: "AWSResourceReferenceWrapper provides a wrapper around

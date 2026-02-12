@@ -74,6 +74,7 @@ rules:
   resources:
   - pullthroughcacherules
   - repositories
+  - repositorycreationtemplates
   verbs:
   - create
   - delete
@@ -87,6 +88,7 @@ rules:
   resources:
   - pullthroughcacherules/status
   - repositories/status
+  - repositorycreationtemplates/status
   verbs:
   - get
   - patch

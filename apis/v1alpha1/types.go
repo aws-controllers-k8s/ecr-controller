@@ -30,8 +30,10 @@ var (
 
 // The image details of the Amazon ECR container image.
 type AWSECRContainerImageDetails struct {
-	Registry       *string `json:"registry,omitempty"`
-	RepositoryName *string `json:"repositoryName,omitempty"`
+	LastInUseAt    *metav1.Time `json:"lastInUseAt,omitempty"`
+	PushedAt       *metav1.Time `json:"pushedAt,omitempty"`
+	Registry       *string      `json:"registry,omitempty"`
+	RepositoryName *string      `json:"repositoryName,omitempty"`
 }
 
 // The encryption configuration for the repository. This determines how the
@@ -55,12 +57,16 @@ type EncryptionConfiguration struct {
 // The encryption configuration to associate with the repository creation template.
 type EncryptionConfigurationForRepositoryCreationTemplate struct {
 	EncryptionType *string `json:"encryptionType,omitempty"`
+	KMSKey         *string `json:"kmsKey,omitempty"`
 }
 
 // The details of an enhanced image scan. This is returned when enhanced scanning
 // is enabled for your private registry.
 type EnhancedImageScanFinding struct {
-	AWSAccountID *string `json:"awsAccountID,omitempty"`
+	AWSAccountID    *string      `json:"awsAccountID,omitempty"`
+	FirstObservedAt *metav1.Time `json:"firstObservedAt,omitempty"`
+	LastObservedAt  *metav1.Time `json:"lastObservedAt,omitempty"`
+	UpdatedAt       *metav1.Time `json:"updatedAt,omitempty"`
 }
 
 // An object representing an Amazon ECR image.
@@ -90,8 +96,8 @@ type ImageScanningConfiguration struct {
 	ScanOnPush *bool `json:"scanOnPush,omitempty"`
 }
 
-// Overrides the default image tag mutability setting of the repository for
-// image tags that match the specified filters.
+// A filter that specifies which image tags should be excluded from the repository's
+// image tag mutability setting.
 type ImageTagMutabilityExclusionFilter struct {
 	Filter     *string `json:"filter,omitempty"`
 	FilterType *string `json:"filterType,omitempty"`
@@ -99,7 +105,9 @@ type ImageTagMutabilityExclusionFilter struct {
 
 // Information about a package vulnerability finding.
 type PackageVulnerabilityDetails struct {
-	SourceURL *string `json:"sourceURL,omitempty"`
+	SourceURL       *string      `json:"sourceURL,omitempty"`
+	VendorCreatedAt *metav1.Time `json:"vendorCreatedAt,omitempty"`
+	VendorUpdatedAt *metav1.Time `json:"vendorUpdatedAt,omitempty"`
 }
 
 // The details of a pull through cache rule.
@@ -126,12 +134,20 @@ type ReplicationDestination struct {
 }
 
 // The details of the repository creation template associated with the request.
-type RepositoryCreationTemplate struct {
-	CustomRoleARN                      *string                              `json:"customRoleARN,omitempty"`
-	ImageTagMutability                 *string                              `json:"imageTagMutability,omitempty"`
-	ImageTagMutabilityExclusionFilters []*ImageTagMutabilityExclusionFilter `json:"imageTagMutabilityExclusionFilters,omitempty"`
-	RepositoryPolicy                   *string                              `json:"repositoryPolicy,omitempty"`
-	ResourceTags                       []*Tag                               `json:"resourceTags,omitempty"`
+type RepositoryCreationTemplate_SDK struct {
+	AppliedFor    []*string    `json:"appliedFor,omitempty"`
+	CreatedAt     *metav1.Time `json:"createdAt,omitempty"`
+	CustomRoleARN *string      `json:"customRoleARN,omitempty"`
+	Description   *string      `json:"description,omitempty"`
+	// The encryption configuration to associate with the repository creation template.
+	EncryptionConfiguration            *EncryptionConfigurationForRepositoryCreationTemplate `json:"encryptionConfiguration,omitempty"`
+	ImageTagMutability                 *string                                               `json:"imageTagMutability,omitempty"`
+	ImageTagMutabilityExclusionFilters []*ImageTagMutabilityExclusionFilter                  `json:"imageTagMutabilityExclusionFilters,omitempty"`
+	LifecyclePolicy                    *string                                               `json:"lifecyclePolicy,omitempty"`
+	Prefix                             *string                                               `json:"prefix,omitempty"`
+	RepositoryPolicy                   *string                                               `json:"repositoryPolicy,omitempty"`
+	ResourceTags                       []*Tag                                                `json:"resourceTags,omitempty"`
+	UpdatedAt                          *metav1.Time                                          `json:"updatedAt,omitempty"`
 }
 
 // The details of the scanning configuration for a repository.
