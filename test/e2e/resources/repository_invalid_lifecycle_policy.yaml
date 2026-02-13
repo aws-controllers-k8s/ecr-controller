@@ -1,0 +1,9 @@
+apiVersion: ecr.services.k8s.aws/v1alpha1
+kind: Repository
+metadata:
+  name: $REPOSITORY_NAME
+spec:
+  name: $REPOSITORY_NAME
+  imageScanningConfiguration:
+    scanOnPush: false
+  lifecyclePolicy: '$REPOSITORY_LIFECYCLE_POLICY'

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -303,17 +304,13 @@ func (rm *resourceManager) sdkCreate(
 	}
 
 	rm.setStatusDefaults(ko)
-	// Set the repository policy
-	if ko.Spec.Policy != nil && *ko.Spec.Policy != "" {
-		if _, err := rm.updateRepositoryPolicy(ctx, desired); err != nil {
-			return nil, err
-		}
-	}
-	// Set the lifecycle policy
-	if ko.Spec.LifecyclePolicy != nil && *ko.Spec.LifecyclePolicy != "" {
-		if _, err := rm.updateLifecyclePolicy(ctx, desired); err != nil {
-			return nil, err
-		}
+	// Repository policy and lifecycle policy need to be set after creation.
+	// Return a requeue error to trigger another reconcile loop where these
+	// will be handled by the update path, avoiding the issue where a failure
+	// in these API calls would leave the repository unmanaged.
+	if (ko.Spec.Policy != nil && *ko.Spec.Policy != "") ||
+		(ko.Spec.LifecyclePolicy != nil && *ko.Spec.LifecyclePolicy != "") {
+		return nil, ackrequeue.NeededAfter(fmt.Errorf("reconciling update only fields"), time.Second)
 	}
 	return &resource{ko}, nil
 }
