@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -310,7 +309,7 @@ func (rm *resourceManager) sdkCreate(
 	// in these API calls would leave the repository unmanaged.
 	if (ko.Spec.Policy != nil && *ko.Spec.Policy != "") ||
 		(ko.Spec.LifecyclePolicy != nil && *ko.Spec.LifecyclePolicy != "") {
-		return nil, ackrequeue.NeededAfter(fmt.Errorf("reconciling update only fields"), time.Second)
+		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, aws.String("bucket created, requeue for updates"), nil)
 	}
 	return &resource{ko}, nil
 }
