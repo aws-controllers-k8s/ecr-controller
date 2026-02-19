@@ -538,6 +538,8 @@ class TestRepository:
         assert k8s.get_resource_exists(ref)
 
         time.sleep(CREATE_WAIT_AFTER_SECONDS)
+        assert k8s.wait_on_condition(ref, "ACK.ResourceSynced", "True", wait_periods=5)
+
 
         # Get latest repository CR
         cr = k8s.wait_resource_consumed_by_controller(ref)
