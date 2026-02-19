@@ -4,5 +4,5 @@
 	// in these API calls would leave the repository unmanaged.
 	if (ko.Spec.Policy != nil && *ko.Spec.Policy != "") || 
 	   (ko.Spec.LifecyclePolicy != nil && *ko.Spec.LifecyclePolicy != "") {
-		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, aws.String("bucket created, requeue for updates"), nil)
+		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, aws.String("repository created, requeue for updates"), nil)
 	}
