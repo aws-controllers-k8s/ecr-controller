@@ -17,10 +17,12 @@ resources:
           operation: CreateRepository
           path: RepositoryName
       LifecyclePolicy:
+        is_document: true
         from:
           operation: PutLifecyclePolicy
           path: LifecyclePolicyText
       Policy:
+        is_iam_policy: true
         from:
           operation: SetRepositoryPolicy
           path: PolicyText
@@ -110,6 +112,10 @@ resources:
       Prefix:
         is_primary_key: true
         is_immutable: true
+      LifecyclePolicy:
+        is_document: true
+      RepositoryPolicy:
+        is_iam_policy: true
       CustomRoleARN:
         references:
           resource: Role
