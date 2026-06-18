@@ -101,7 +101,7 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.LifecyclePolicy, b.ko.Spec.LifecyclePolicy) {
 		delta.Add("Spec.LifecyclePolicy", a.ko.Spec.LifecyclePolicy, b.ko.Spec.LifecyclePolicy)
 	} else if a.ko.Spec.LifecyclePolicy != nil && b.ko.Spec.LifecyclePolicy != nil {
-		if *a.ko.Spec.LifecyclePolicy != *b.ko.Spec.LifecyclePolicy {
+		if equal, err := ackcompare.DocumentEqual(*a.ko.Spec.LifecyclePolicy, *b.ko.Spec.LifecyclePolicy); err != nil || !equal {
 			delta.Add("Spec.LifecyclePolicy", a.ko.Spec.LifecyclePolicy, b.ko.Spec.LifecyclePolicy)
 		}
 	}
@@ -115,7 +115,7 @@ func newResourceDelta(
 	if ackcompare.HasNilDifference(a.ko.Spec.RepositoryPolicy, b.ko.Spec.RepositoryPolicy) {
 		delta.Add("Spec.RepositoryPolicy", a.ko.Spec.RepositoryPolicy, b.ko.Spec.RepositoryPolicy)
 	} else if a.ko.Spec.RepositoryPolicy != nil && b.ko.Spec.RepositoryPolicy != nil {
-		if *a.ko.Spec.RepositoryPolicy != *b.ko.Spec.RepositoryPolicy {
+		if equal, err := ackcompare.IAMPolicyDocumentEqual(*a.ko.Spec.RepositoryPolicy, *b.ko.Spec.RepositoryPolicy); err != nil || !equal {
 			delta.Add("Spec.RepositoryPolicy", a.ko.Spec.RepositoryPolicy, b.ko.Spec.RepositoryPolicy)
 		}
 	}
