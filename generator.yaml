@@ -38,6 +38,11 @@ resources:
         print:
           name: IMAGE-TAG-MUTABILITY
           index: 1
+      EncryptionConfiguration.KMSKey:
+        references:
+          service_name: kms
+          resource: Key
+          path: Status.ACKResourceMetadata.ARN
     renames:
       operations:
         CreateRepository:
@@ -120,6 +125,11 @@ resources:
         references:
           resource: Role
           service_name: iam
+          path: Status.ACKResourceMetadata.ARN
+      EncryptionConfiguration.KMSKey:
+        references:
+          service_name: kms
+          resource: Key
           path: Status.ACKResourceMetadata.ARN
     list_operation:
       match_fields:
