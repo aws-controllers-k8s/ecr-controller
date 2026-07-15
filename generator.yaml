@@ -38,6 +38,22 @@ resources:
         print:
           name: IMAGE-TAG-MUTABILITY
           index: 1
+      EncryptionConfiguration:
+        late_initialize:
+          skip_incomplete_check: {}
+        set:
+          - method: Create
+            ignore: true
+          - method: Update
+            ignore: true
+      EncryptionConfiguration.EncryptionType:
+        late_initialize:
+          skip_incomplete_check: {}
+      EncryptionConfiguration.KMSKey:
+        references:
+          service_name: kms
+          resource: Key
+          path: Status.ACKResourceMetadata.ARN
     renames:
       operations:
         CreateRepository:
@@ -120,6 +136,22 @@ resources:
         references:
           resource: Role
           service_name: iam
+          path: Status.ACKResourceMetadata.ARN
+      EncryptionConfiguration:
+        late_initialize:
+          skip_incomplete_check: {}
+        set:
+          - method: Create
+            ignore: true
+          - method: Update
+            ignore: true
+      EncryptionConfiguration.EncryptionType:
+        late_initialize:
+          skip_incomplete_check: {}
+      EncryptionConfiguration.KMSKey:
+        references:
+          service_name: kms
+          resource: Key
           path: Status.ACKResourceMetadata.ARN
     list_operation:
       match_fields:

@@ -239,18 +239,6 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Status.CreatedAt = nil
 	}
-	if resp.Repository.EncryptionConfiguration != nil {
-		f1 := &svcapitypes.EncryptionConfiguration{}
-		if resp.Repository.EncryptionConfiguration.EncryptionType != "" {
-			f1.EncryptionType = aws.String(string(resp.Repository.EncryptionConfiguration.EncryptionType))
-		}
-		if resp.Repository.EncryptionConfiguration.KmsKey != nil {
-			f1.KMSKey = resp.Repository.EncryptionConfiguration.KmsKey
-		}
-		ko.Spec.EncryptionConfiguration = f1
-	} else {
-		ko.Spec.EncryptionConfiguration = nil
-	}
 	if resp.Repository.ImageScanningConfiguration != nil {
 		f2 := &svcapitypes.ImageScanningConfiguration{}
 		f2.ScanOnPush = &resp.Repository.ImageScanningConfiguration.ScanOnPush

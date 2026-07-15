@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ecr.services.k8s.aws,resources=repositories,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ecr.services.k8s.aws,resources=repositories/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"RegistryID"}
+var lateInitializeFieldNames = []string{"EncryptionConfiguration", "EncryptionType", "RegistryID"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -266,6 +266,14 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 ) acktypes.AWSResource {
 	observedKo := rm.concreteResource(observed).ko.DeepCopy()
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.EncryptionConfiguration != nil && latestKo.Spec.EncryptionConfiguration == nil {
+		latestKo.Spec.EncryptionConfiguration = observedKo.Spec.EncryptionConfiguration
+	}
+	if observedKo.Spec.EncryptionConfiguration != nil && latestKo.Spec.EncryptionConfiguration != nil {
+		if observedKo.Spec.EncryptionConfiguration.EncryptionType != nil && latestKo.Spec.EncryptionConfiguration.EncryptionType == nil {
+			latestKo.Spec.EncryptionConfiguration.EncryptionType = observedKo.Spec.EncryptionConfiguration.EncryptionType
+		}
+	}
 	if observedKo.Spec.RegistryID != nil && latestKo.Spec.RegistryID == nil {
 		latestKo.Spec.RegistryID = observedKo.Spec.RegistryID
 	}
