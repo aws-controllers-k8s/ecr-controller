@@ -50,6 +50,8 @@ resources:
         late_initialize:
           skip_incomplete_check: {}
       EncryptionConfiguration.KMSKey:
+        late_initialize:
+          skip_incomplete_check: {}
         references:
           service_name: kms
           resource: Key
@@ -149,6 +151,8 @@ resources:
         late_initialize:
           skip_incomplete_check: {}
       EncryptionConfiguration.KMSKey:
+        late_initialize:
+          skip_incomplete_check: {}
         references:
           service_name: kms
           resource: Key

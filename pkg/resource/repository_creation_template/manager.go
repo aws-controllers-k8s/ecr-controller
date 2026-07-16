@@ -50,7 +50,7 @@ var (
 // +kubebuilder:rbac:groups=ecr.services.k8s.aws,resources=repositorycreationtemplates,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ecr.services.k8s.aws,resources=repositorycreationtemplates/status,verbs=get;update;patch
 
-var lateInitializeFieldNames = []string{"EncryptionConfiguration", "EncryptionType"}
+var lateInitializeFieldNames = []string{"EncryptionConfiguration", "EncryptionType", "KMSKey"}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -268,6 +268,11 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	if observedKo.Spec.EncryptionConfiguration != nil && latestKo.Spec.EncryptionConfiguration != nil {
 		if observedKo.Spec.EncryptionConfiguration.EncryptionType != nil && latestKo.Spec.EncryptionConfiguration.EncryptionType == nil {
 			latestKo.Spec.EncryptionConfiguration.EncryptionType = observedKo.Spec.EncryptionConfiguration.EncryptionType
+		}
+	}
+	if observedKo.Spec.EncryptionConfiguration != nil && latestKo.Spec.EncryptionConfiguration != nil {
+		if observedKo.Spec.EncryptionConfiguration.KMSKey != nil && latestKo.Spec.EncryptionConfiguration.KMSKey == nil {
+			latestKo.Spec.EncryptionConfiguration.KMSKey = observedKo.Spec.EncryptionConfiguration.KMSKey
 		}
 	}
 	return &resource{latestKo}
