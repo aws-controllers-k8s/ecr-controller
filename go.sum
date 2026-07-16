@@ -2,6 +2,8 @@ github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/aws-controllers-k8s/iam-controller v1.5.0 h1:O9AYY5P8eIFircfkjIEwkXwGgfXpGRk6xEn8Qb78BiU=
 github.com/aws-controllers-k8s/iam-controller v1.5.0/go.mod h1:V19V1L0e1Gde8/7Ti0wKugtXU9oK8zaaYDe54TQm94E=
+github.com/aws-controllers-k8s/kms-controller v1.0.30 h1:LShnMwPCDu6qEQ5w8FInSE9Zwq9YfozVMzRyrPAcelU=
+github.com/aws-controllers-k8s/kms-controller v1.0.30/go.mod h1:05teqOpGWMGXOCKXN+6eh1cbanQWpDwwCfJ7xEA01Gs=
 github.com/aws-controllers-k8s/runtime v0.61.0 h1:46ksj9nvW5gx86aB44/zfrZOvJj4G7WWnWf7hj2CcCw=
 github.com/aws-controllers-k8s/runtime v0.61.0/go.mod h1:Ovpk9GCCc/3hekVN6CL0cZhsG41JqSvIb8DXwaEwL34=
 github.com/aws-controllers-k8s/secretsmanager-controller v1.1.0 h1:S+8FLIRMcwzR+Vub86L3GJet/XMCMGHIjVyxnNn0dNI=

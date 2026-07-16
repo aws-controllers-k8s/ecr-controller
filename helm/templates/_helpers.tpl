@@ -102,6 +102,14 @@ rules:
   - get
   - list
 - apiGroups:
+  - kms.services.k8s.aws
+  resources:
+  - keys
+  - keys/status
+  verbs:
+  - get
+  - list
+- apiGroups:
   - secretsmanager.services.k8s.aws
   resources:
   - secrets

@@ -275,18 +275,6 @@ func (rm *resourceManager) sdkCreate(
 	} else {
 		ko.Spec.Description = nil
 	}
-	if resp.RepositoryCreationTemplate.EncryptionConfiguration != nil {
-		f4 := &svcapitypes.EncryptionConfigurationForRepositoryCreationTemplate{}
-		if resp.RepositoryCreationTemplate.EncryptionConfiguration.EncryptionType != "" {
-			f4.EncryptionType = aws.String(string(resp.RepositoryCreationTemplate.EncryptionConfiguration.EncryptionType))
-		}
-		if resp.RepositoryCreationTemplate.EncryptionConfiguration.KmsKey != nil {
-			f4.KMSKey = resp.RepositoryCreationTemplate.EncryptionConfiguration.KmsKey
-		}
-		ko.Spec.EncryptionConfiguration = f4
-	} else {
-		ko.Spec.EncryptionConfiguration = nil
-	}
 	if resp.RepositoryCreationTemplate.ImageTagMutability != "" {
 		ko.Spec.ImageTagMutability = aws.String(string(resp.RepositoryCreationTemplate.ImageTagMutability))
 	} else {
@@ -480,18 +468,6 @@ func (rm *resourceManager) sdkUpdate(
 		ko.Spec.Description = resp.RepositoryCreationTemplate.Description
 	} else {
 		ko.Spec.Description = nil
-	}
-	if resp.RepositoryCreationTemplate.EncryptionConfiguration != nil {
-		f4 := &svcapitypes.EncryptionConfigurationForRepositoryCreationTemplate{}
-		if resp.RepositoryCreationTemplate.EncryptionConfiguration.EncryptionType != "" {
-			f4.EncryptionType = aws.String(string(resp.RepositoryCreationTemplate.EncryptionConfiguration.EncryptionType))
-		}
-		if resp.RepositoryCreationTemplate.EncryptionConfiguration.KmsKey != nil {
-			f4.KMSKey = resp.RepositoryCreationTemplate.EncryptionConfiguration.KmsKey
-		}
-		ko.Spec.EncryptionConfiguration = f4
-	} else {
-		ko.Spec.EncryptionConfiguration = nil
 	}
 	if resp.RepositoryCreationTemplate.ImageTagMutability != "" {
 		ko.Spec.ImageTagMutability = aws.String(string(resp.RepositoryCreationTemplate.ImageTagMutability))

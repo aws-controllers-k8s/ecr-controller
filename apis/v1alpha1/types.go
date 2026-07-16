@@ -52,12 +52,16 @@ type AWSECRContainerImageDetails struct {
 type EncryptionConfiguration struct {
 	EncryptionType *string `json:"encryptionType,omitempty"`
 	KMSKey         *string `json:"kmsKey,omitempty"`
+	// Reference field for KMSKey
+	KMSKeyRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"kmsKeyRef,omitempty"`
 }
 
 // The encryption configuration to associate with the repository creation template.
 type EncryptionConfigurationForRepositoryCreationTemplate struct {
 	EncryptionType *string `json:"encryptionType,omitempty"`
 	KMSKey         *string `json:"kmsKey,omitempty"`
+	// Reference field for KMSKey
+	KMSKeyRef *ackv1alpha1.AWSResourceReferenceWrapper `json:"kmsKeyRef,omitempty"`
 }
 
 // The details of an enhanced image scan. This is returned when enhanced scanning
