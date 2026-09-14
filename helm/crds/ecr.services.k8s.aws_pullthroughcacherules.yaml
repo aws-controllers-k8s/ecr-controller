@@ -125,21 +125,21 @@ spec:
                   the pull through cache rule. The following is the syntax to use for each
                   supported upstream registry.
 
-                    - Amazon ECR (ecr) – .dkr.ecr..amazonaws.com
+                     * Amazon ECR (ecr) – .dkr.ecr..amazonaws.com
 
-                    - Amazon ECR Public (ecr-public) – public.ecr.aws
+                     * Amazon ECR Public (ecr-public) – public.ecr.aws
 
-                    - Docker Hub (docker-hub) – registry-1.docker.io
+                     * Docker Hub (docker-hub) – registry-1.docker.io
 
-                    - GitHub Container Registry (github-container-registry) – ghcr.io
+                     * GitHub Container Registry (github-container-registry) – ghcr.io
 
-                    - GitLab Container Registry (gitlab-container-registry) – registry.gitlab.com
+                     * GitLab Container Registry (gitlab-container-registry) – registry.gitlab.com
 
-                    - Kubernetes (k8s) – registry.k8s.io
+                     * Kubernetes (k8s) – registry.k8s.io
 
-                    - Microsoft Azure Container Registry (azure-container-registry) – .azurecr.io
+                     * Microsoft Azure Container Registry (azure-container-registry) – .azurecr.io
 
-                    - Quay (quay) – quay.io
+                     * Quay (quay) – quay.io
                 type: string
                 x-kubernetes-validations:
                 - message: Value is immutable once set
