@@ -28,6 +28,7 @@ type RepositorySpec struct {
 	// The encryption configuration for the repository. This determines how the
 	// contents of your repository are encrypted at rest.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
+	//
 	// The imageScanningConfiguration parameter is being deprecated, in favor of
 	// specifying the image scanning configuration at the registry level. For more
 	// information, see PutRegistryScanningConfiguration.
