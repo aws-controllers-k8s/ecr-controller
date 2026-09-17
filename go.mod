@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/aws-controllers-k8s/iam-controller v1.9.0
 	github.com/aws-controllers-k8s/kms-controller v1.5.0
-	github.com/aws-controllers-k8s/runtime v0.63.0
+	github.com/aws-controllers-k8s/runtime v0.64.0
 	github.com/aws-controllers-k8s/secretsmanager-controller v1.6.1
 	github.com/aws/aws-sdk-go-v2 v1.41.0
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.55.0
