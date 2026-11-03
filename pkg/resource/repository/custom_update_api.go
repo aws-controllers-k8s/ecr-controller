@@ -230,17 +230,25 @@ func (rm *resourceManager) syncRepositoryTags(
 	exit := rlog.Trace("rm.syncRepositoryTags")
 	defer exit(err)
 
-	added, updated, removed := computeTagsDelta(latest.ko.Spec.Tags, desired.ko.Spec.Tags)
+	from, fromOrder := convertToOrderedACKTags(latest.ko.Spec.Tags)
+	to, toOrder := convertToOrderedACKTags(desired.ko.Spec.Tags)
+	added, _, removed := ackcompare.GetTagsDifference(from, to)
+	if len(added) == 0 && len(removed) == 0 {
+		return nil
+	}
+	toAdd := fromACKTags(added, toOrder)
+	toDelete := fromACKTags(removed, fromOrder)
 
-	// Tags to create
-	added = append(added, updated...)
-
-	if len(removed) > 0 {
+	if len(toDelete) > 0 {
+		tagKeys := make([]string, 0, len(toDelete))
+		for _, t := range toDelete {
+			tagKeys = append(tagKeys, *t.Key)
+		}
 		_, err = rm.sdkapi.UntagResource(
 			ctx,
 			&svcsdk.UntagResourceInput{
 				ResourceArn: (*string)(latest.ko.Status.ACKResourceMetadata.ARN),
-				TagKeys:     aws.ToStringSlice(removed),
+				TagKeys:     tagKeys,
 			},
 		)
 		rm.metrics.RecordAPICall("UPDATE", "UntagResource", err)
@@ -249,12 +257,12 @@ func (rm *resourceManager) syncRepositoryTags(
 		}
 	}
 
-	if len(added) > 0 {
+	if len(toAdd) > 0 {
 		_, err = rm.sdkapi.TagResource(
 			ctx,
 			&svcsdk.TagResourceInput{
 				ResourceArn: (*string)(latest.ko.Status.ACKResourceMetadata.ARN),
-				Tags:        sdkTagsFromResourceTags(added),
+				Tags:        sdkTagsFromResourceTags(toAdd),
 			},
 		)
 		rm.metrics.RecordAPICall("UPDATE", "TagResource", err)
